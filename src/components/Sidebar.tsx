@@ -33,6 +33,19 @@ export const navItems = [
 
 export default function Sidebar({ activeTab, setActiveTab, userRole }: SidebarProps) {
   const filteredNavItems = navItems.filter(item => userRole && item.roles.includes(userRole));
+  const [theme, setTheme] = React.useState<any>(() => {
+    const saved = localStorage.getItem('erp_theme');
+    return saved ? JSON.parse(saved) : { dashboardTitle: 'Multillantas de la Frontera', showLogoContainer: true };
+  });
+
+  React.useEffect(() => {
+    const handleThemeUpdate = (e: any) => {
+      setTheme(e.detail);
+    };
+
+    window.addEventListener('theme-update', handleThemeUpdate);
+    return () => window.removeEventListener('theme-update', handleThemeUpdate);
+  }, []);
 
   const roleColors = {
     superadmin: 'border-brand-red text-brand-red',
@@ -52,8 +65,32 @@ export default function Sidebar({ activeTab, setActiveTab, userRole }: SidebarPr
     <aside id="sidebar" className="w-64 h-screen bg-card-bg text-white flex flex-col fixed left-0 top-0 border-r border-white/5 shrink-0 z-40">
       <div className="p-6 flex flex-col gap-4 border-b border-white/5 bg-interface-bg/30">
         <div className="flex items-center gap-3">
-          <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" className="w-12 object-contain" />
-          <span className="text-xs font-black tracking-tighter text-white uppercase leading-tight">Multillantas de la Frontera</span>
+          {theme.showLogoContainer ? (
+            <div 
+              className="bg-brand-red rounded flex items-center justify-center overflow-hidden shrink-0" 
+              style={{ 
+                width: 'var(--logo-size, 48px)',
+                height: 'var(--logo-size, 48px)'
+              }}
+            >
+              <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" className="w-[85%]" />
+            </div>
+          ) : (
+            <img 
+              src="https://appdesign.appdesignproyectos.com/multillantas.png" 
+              alt="Logo" 
+              style={{ 
+                width: 'var(--logo-size, 48px)'
+              }}
+              className="object-contain shrink-0" 
+            />
+          )}
+          <span 
+            className="font-black tracking-tighter text-white uppercase leading-none"
+            style={{ fontSize: 'calc(var(--dashboard-title-size, 16px) * 0.8)' }}
+          >
+            {theme.dashboardTitle}
+          </span>
         </div>
         {userRole && (
           <div className={`px-3 py-1.5 rounded-xl border bg-interface-bg flex items-center justify-center gap-2 ${roleColors[userRole]}`}>

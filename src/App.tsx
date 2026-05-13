@@ -17,19 +17,37 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [theme, setTheme] = useState<any>(() => {
+    const saved = localStorage.getItem('erp_theme');
+    return saved ? JSON.parse(saved) : { dashboardTitle: 'Multillantas de la Frontera', showLogoContainer: true };
+  });
 
   // Apply saved theme on mount
   React.useEffect(() => {
+    const applyTheme = (themeData: any) => {
+      const root = document.documentElement;
+      root.style.setProperty('--color-interface-bg', themeData.primaryBg);
+      root.style.setProperty('--color-card-bg', themeData.cardBg);
+      root.style.setProperty('--color-brand-red', themeData.brandRed);
+      root.style.setProperty('--color-brand-blue', themeData.brandBlue);
+      root.style.setProperty('--color-text-muted', themeData.textMuted);
+      root.style.setProperty('--logo-size', `${themeData.logoSize}px`);
+      root.style.setProperty('--dashboard-title-size', `${themeData.dashboardTitleFontSize}px`);
+      root.style.setProperty('--display-logo-container', themeData.showLogoContainer ? 'flex' : 'none');
+      setTheme(themeData);
+    };
+
     const saved = localStorage.getItem('erp_theme');
     if (saved) {
-      const theme = JSON.parse(saved);
-      const root = document.documentElement;
-      root.style.setProperty('--color-interface-bg', theme.primaryBg);
-      root.style.setProperty('--color-card-bg', theme.cardBg);
-      root.style.setProperty('--color-brand-red', theme.brandRed);
-      root.style.setProperty('--color-brand-blue', theme.brandBlue);
-      root.style.setProperty('--color-text-muted', theme.textMuted);
+      applyTheme(JSON.parse(saved));
     }
+
+    const handleThemeUpdate = (e: any) => {
+      applyTheme(e.detail);
+    };
+
+    window.addEventListener('theme-update', handleThemeUpdate);
+    return () => window.removeEventListener('theme-update', handleThemeUpdate);
   }, []);
 
   const selectedBranch = selectedBranchId === 'all' 
@@ -88,11 +106,25 @@ export default function App() {
         {/* Top Header */}
         <header className="h-16 bg-card-bg border-b border-interface-bg flex items-center justify-between px-6 md:px-8 shrink-0 sticky top-0 z-30">
           <div className="flex items-center gap-3">
-             <div className="md:hidden w-8 h-8 bg-brand-red rounded flex items-center justify-center font-bold text-white text-xs" onClick={handleLogout}>
-               <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" className="w-6" />
+             <div onClick={handleLogout} className="md:hidden cursor-pointer flex items-center justify-center">
+               {theme.showLogoContainer ? (
+                 <div 
+                   className="bg-brand-red rounded flex items-center justify-center overflow-hidden" 
+                   style={{ 
+                     width: 'calc(var(--logo-size, 24px) * 1.5)',
+                     height: 'calc(var(--logo-size, 24px) * 1.5)'
+                   }}
+                 >
+                   <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" style={{ width: 'var(--logo-size, 24px)' }} />
+                 </div>
+               ) : (
+                 <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" style={{ width: 'var(--logo-size, 24px)' }} />
+               )}
              </div>
              <div className="flex flex-col">
-               <h1 className="text-sm md:text-base font-black text-white tracking-tight leading-none uppercase">Multillantas de la Frontera</h1>
+               <h1 className="font-black text-white tracking-tight leading-none uppercase" style={{ fontSize: 'var(--dashboard-title-size, 16px)' }}>
+                 {theme.dashboardTitle}
+               </h1>
                <div className="flex items-center gap-1 mt-1">
                  <span className="text-[9px] font-black uppercase text-brand-blue">{selectedBranch?.name}</span>
                  <ChevronRight className="w-2.5 h-2.5 text-text-muted" />
