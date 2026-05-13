@@ -58,6 +58,23 @@ export default function Dashboard() {
     };
   });
 
+  // Calculate top selling tires from SALES
+  const tireSalesCount: Record<string, number> = {};
+  SALES.forEach(sale => {
+    sale.items.forEach(item => {
+      tireSalesCount[item.productId] = (tireSalesCount[item.productId] || 0) + item.quantity;
+    });
+  });
+
+  const topSellingTires = TIRES
+    .map(tire => ({
+      brandModel: `${tire.brand} ${tire.model}`,
+      totalSold: tireSalesCount[tire.id] || 0
+    }))
+    .filter(t => t.totalSold > 0)
+    .sort((a, b) => b.totalSold - a.totalSold)
+    .slice(0, 5);
+
   const COLORS = ['#f97316', '#3b82f6', '#10b981'];
 
   return (
@@ -175,15 +192,15 @@ export default function Dashboard() {
           </div>
           <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={TIRES.slice(0, 5)} layout="vertical" margin={{ top: 0, right: 30, left: 40, bottom: 0 }}>
+              <BarChart data={topSellingTires} layout="vertical" margin={{ top: 0, right: 30, left: 40, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                 <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                <YAxis dataKey="brand" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} />
+                <YAxis dataKey="brandModel" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} width={120} />
                 <Tooltip 
                   cursor={{ fill: '#f8fafc' }}
                   contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', shadow: 'sm', fontSize: '11px' }}
                 />
-                <Bar dataKey="price" fill="#2563eb" radius={[0, 4, 4, 0]} barSize={24} />
+                <Bar dataKey="totalSold" fill="#2563eb" radius={[0, 4, 4, 0]} barSize={24} />
               </BarChart>
             </ResponsiveContainer>
           </div>

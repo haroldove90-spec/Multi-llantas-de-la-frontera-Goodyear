@@ -35,7 +35,7 @@ export default function Warranties() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex gap-4">
-                    <div className="w-12 h-12 bg-slate-50 rounded-lg flex items-center justify-center text-blue-600 border border-slate-100 group-hover:bg-blue-50 transition-colors">
+                    <div className="w-12 h-12 bg-slate-50 rounded-lg flex items-center justify-center text-blue-600 border border-slate-100 group-hover:bg-blue-50 transition-colors shrink-0">
                       <ShieldAlert className="w-6 h-6" />
                     </div>
                     <div>
@@ -46,12 +46,25 @@ export default function Warranties() {
                       <p className="text-[11px] font-mono text-slate-500 mt-1 uppercase font-bold tracking-tight">{warranty.dot}</p>
                     </div>
                   </div>
-                  <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
+                  <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest shrink-0 ${
                     warranty.status === 'Pendiente' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
                   }`}>
                     {warranty.status}
                   </span>
                 </div>
+
+                {warranty.photoUrl && (
+                  <div className="mt-4 h-32 w-full overflow-hidden rounded-xl border border-slate-100 relative group/photo">
+                    <img 
+                      src={warranty.photoUrl} 
+                      alt="Daño de llanta" 
+                      className="w-full h-full object-cover group-hover/photo:scale-110 transition-transform duration-500"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent"></div>
+                    <div className="absolute bottom-2 left-2 text-[10px] text-white font-black uppercase tracking-widest">Evidencia Fotográfica</div>
+                  </div>
+                )}
                 
                 <div className="mt-6 grid grid-cols-2 gap-8 border-t border-slate-50 pt-6">
                   <div>
@@ -66,11 +79,21 @@ export default function Warranties() {
 
                 <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-100 text-slate-600">
                   <p className="text-[9px] uppercase font-black text-slate-400 mb-2 tracking-widest">Dictamen Técnico Solicitado</p>
-                  <p className="text-sm leading-relaxed font-medium">
+                  <p className="text-sm leading-relaxed font-medium mb-3">
                     <span className="text-blue-600 mr-1 italic">"</span>
                     {warranty.reason}
                     <span className="text-blue-600 ml-1 italic">"</span>
                   </p>
+                  {warranty.diagnosis && (
+                    <div className="pt-3 border-t border-slate-200">
+                      <p className="text-[9px] uppercase font-black text-blue-600 mb-1 tracking-widest flex items-center gap-1.5">
+                        <CheckCircle className="w-3 h-3" /> Respuesta del Perito
+                      </p>
+                      <p className="text-[11px] font-bold text-slate-500 italic">
+                        {warranty.diagnosis}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             );

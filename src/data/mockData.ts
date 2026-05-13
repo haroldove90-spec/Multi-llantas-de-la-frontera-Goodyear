@@ -2,6 +2,9 @@ export interface Branch {
   id: string;
   name: string;
   location: string;
+  manager: string;
+  phone: string;
+  schedule: string;
 }
 
 export interface Tire {
@@ -62,9 +65,30 @@ export interface Sale {
 }
 
 export const BRANCHES: Branch[] = [
-  { id: 'matriz', name: 'Matriz - Monterrey', location: 'Monterrey, NL' },
-  { id: 'poniente', name: 'Sucursal Poniente', location: 'CDMX, Santa Fe' },
-  { id: 'sur', name: 'Sucursal Sur', location: 'Mérida, YUC' },
+  { 
+    id: 'matriz', 
+    name: 'Matriz - Monterrey', 
+    location: 'Av. Constitución 450, Monterrey, NL',
+    manager: 'Ing. Ricardo Salgado',
+    phone: '81 8345 6789',
+    schedule: 'Lun-Vie 8:00 - 19:00, Sab 9:00 - 14:00'
+  },
+  { 
+    id: 'poniente', 
+    name: 'Sucursal Poniente', 
+    location: 'Blvd. Manuel Ávila Camacho 23, CDMX',
+    manager: 'Lic. Martha Ruiz',
+    phone: '55 5234 5678',
+    schedule: 'Lun-Vie 9:00 - 18:00, Sab 9:00 - 15:00'
+  },
+  { 
+    id: 'sur', 
+    name: 'Sucursal Sur', 
+    location: 'Prolongación Montejo 12, Mérida, YUC',
+    manager: 'C.P. Julian Cantón',
+    phone: '999 923 4567',
+    schedule: 'Lun-Vie 8:00 - 18:00, Sab 8:00 - 13:00'
+  },
 ];
 
 export const TIRES: Tire[] = [

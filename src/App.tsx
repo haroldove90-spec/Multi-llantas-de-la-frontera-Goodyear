@@ -6,8 +6,9 @@ import Sales from './components/Sales';
 import Transfers from './components/Transfers';
 import Warranties from './components/Warranties';
 import FiscalCenter from './components/FiscalCenter';
+import Branches from './components/Branches';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText } from 'lucide-react';
+import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -26,6 +27,8 @@ export default function App() {
         return <Warranties />;
       case 'fiscal':
         return <FiscalCenter />;
+      case 'branches':
+        return <Branches />;
       default:
         return <Dashboard />;
     }
@@ -81,6 +84,7 @@ export default function App() {
             { id: 'sales', icon: ShoppingCart },
             { id: 'transfers', icon: Truck },
             { id: 'fiscal', icon: FileText },
+            { id: 'branches', icon: Store },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
