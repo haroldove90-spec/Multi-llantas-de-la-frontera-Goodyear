@@ -109,48 +109,22 @@ export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onC
               <X className="w-5 h-5" />
             </button>
           )}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-full">
           {theme.showLogoContainer ? (
             <div 
-              className="bg-brand-red rounded-lg flex items-center justify-center overflow-hidden shrink-0" 
-              style={{ 
-                width: 'var(--logo-size, 32px)',
-                height: 'var(--logo-size, 32px)'
-              }}
+              className="bg-brand-red rounded-lg flex items-center justify-center overflow-hidden w-full aspect-video p-4" 
             >
-              <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" className="w-[85%] h-[85%] object-contain" />
+              <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
           ) : (
-            <div className="flex items-center">
-              {/* Mobile Size */}
+            <div className="flex items-center justify-center w-full">
               <img 
                 src="https://appdesign.appdesignproyectos.com/multillantas.png" 
                 alt="Logo" 
-                style={{ width: 'var(--logo-size-mobile, 24px)' }}
-                className="object-contain shrink-0 md:hidden" 
-              />
-              {/* Tablet Size */}
-              <img 
-                src="https://appdesign.appdesignproyectos.com/multillantas.png" 
-                alt="Logo" 
-                style={{ width: 'var(--logo-size-tablet, 28px)' }}
-                className="object-contain shrink-0 hidden md:block lg:hidden" 
-              />
-              {/* Desktop Size */}
-              <img 
-                src="https://appdesign.appdesignproyectos.com/multillantas.png" 
-                alt="Logo" 
-                style={{ width: 'var(--logo-size, 32px)' }}
-                className="object-contain shrink-0 hidden lg:block" 
+                className="w-full h-auto object-contain shrink-0" 
               />
             </div>
           )}
-          <span 
-            className="font-black tracking-tighter text-white uppercase leading-none md:hidden"
-            style={{ fontSize: 'calc(var(--dashboard-title-size, 16px) * 0.8)' }}
-          >
-            {theme.dashboardTitle}
-          </span>
         </div>
         {userRole && (
           <div className={`px-3 py-1.5 rounded-xl border bg-interface-bg flex items-center justify-center gap-2 ${roleColors[userRole]}`}>

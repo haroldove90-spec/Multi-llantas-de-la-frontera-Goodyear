@@ -15,6 +15,8 @@ interface ThemeConfig {
   logoSizeHome: number;
   dashboardTitle: string;
   dashboardTitleFontSize: number;
+  dashboardSubtitle: string;
+  dashboardSubtitleFontSize: number;
   showLogoContainer: boolean;
 }
 
@@ -31,6 +33,8 @@ const DEFAULT_THEME: ThemeConfig = {
   logoSizeHome: 100,
   dashboardTitle: 'Multillantas de la Frontera',
   dashboardTitleFontSize: 16,
+  dashboardSubtitle: 'Sistema de Gestión Integral',
+  dashboardSubtitleFontSize: 10,
   showLogoContainer: false,
 };
 
@@ -63,8 +67,10 @@ export default function Customization() {
     root.style.setProperty('--logo-size-mobile', `${theme.logoSizeMobile || DEFAULT_THEME.logoSizeMobile}px`);
     root.style.setProperty('--logo-size-home', `${theme.logoSizeHome || DEFAULT_THEME.logoSizeHome}px`);
     root.style.setProperty('--dashboard-title-size', `${theme.dashboardTitleFontSize || DEFAULT_THEME.dashboardTitleFontSize}px`);
+    root.style.setProperty('--dashboard-subtitle-size', `${theme.dashboardSubtitleFontSize || DEFAULT_THEME.dashboardSubtitleFontSize}px`);
     root.style.setProperty('--display-logo-container', theme.showLogoContainer ? 'flex' : 'none');
     root.style.setProperty('--dashboard-title-text', `"${theme.dashboardTitle || DEFAULT_THEME.dashboardTitle}"`); 
+    root.style.setProperty('--dashboard-subtitle-text', `"${theme.dashboardSubtitle || DEFAULT_THEME.dashboardSubtitle}"`); 
     
     window.dispatchEvent(new CustomEvent('theme-update', { detail: theme }));
   }, [theme]);
@@ -123,16 +129,28 @@ export default function Customization() {
           <section>
             <h3 className="text-sm font-black uppercase tracking-[0.3em] text-white/40 mb-6 border-b border-white/5 pb-2">Logo y Tipografía</h3>
             <div className="space-y-6">
-              {/* Title Text */}
-              <div className="bg-card-bg p-6 rounded-3xl border border-white/5 shadow-xl">
-                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Título del Dashboard</p>
-                <input 
-                  type="text"
-                  value={theme.dashboardTitle || ''}
-                  onChange={(e) => setTheme({ ...theme, dashboardTitle: e.target.value })}
-                  className="w-full bg-interface-bg border border-white/10 rounded-xl px-4 py-3 text-white font-bold focus:border-brand-red outline-none transition-colors"
-                  placeholder="Nombre de la empresa..."
-                />
+              {/* Title & Subtitle Text */}
+              <div className="bg-card-bg p-6 rounded-3xl border border-white/5 shadow-xl space-y-6">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Título del Dashboard</p>
+                  <input 
+                    type="text"
+                    value={theme.dashboardTitle || ''}
+                    onChange={(e) => setTheme({ ...theme, dashboardTitle: e.target.value })}
+                    className="w-full bg-interface-bg border border-white/10 rounded-xl px-4 py-3 text-white font-bold focus:border-brand-red outline-none transition-colors"
+                    placeholder="Nombre de la empresa..."
+                  />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Subtítulo del Dashboard</p>
+                  <input 
+                    type="text"
+                    value={theme.dashboardSubtitle || ''}
+                    onChange={(e) => setTheme({ ...theme, dashboardSubtitle: e.target.value })}
+                    className="w-full bg-interface-bg border border-white/10 rounded-xl px-4 py-3 text-white font-bold focus:border-brand-blue outline-none transition-colors"
+                    placeholder="Eslogan o descripción..."
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -179,17 +197,30 @@ export default function Customization() {
                     />
                   </div>
                   
-                  {/* Title Size */}
-                  <div className="bg-card-bg p-6 rounded-3xl border border-white/5 shadow-xl">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Tamaño Título ({theme.dashboardTitleFontSize || 0}px)</p>
-                    <input 
-                      type="range"
-                      min="8"
-                      max="40"
-                      value={theme.dashboardTitleFontSize || 8}
-                      onChange={(e) => setTheme({ ...theme, dashboardTitleFontSize: parseInt(e.target.value) })}
-                      className="w-full accent-brand-red"
-                    />
+                  {/* Title & Subtitle Sizes */}
+                  <div className="bg-card-bg p-6 rounded-3xl border border-white/5 shadow-xl space-y-6">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Tamaño Título ({theme.dashboardTitleFontSize || 0}px)</p>
+                      <input 
+                        type="range"
+                        min="8"
+                        max="40"
+                        value={theme.dashboardTitleFontSize || 8}
+                        onChange={(e) => setTheme({ ...theme, dashboardTitleFontSize: parseInt(e.target.value) })}
+                        className="w-full accent-brand-red h-1.5"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Tamaño Subtítulo ({theme.dashboardSubtitleFontSize || 0}px)</p>
+                      <input 
+                        type="range"
+                        min="8"
+                        max="24"
+                        value={theme.dashboardSubtitleFontSize || 8}
+                        onChange={(e) => setTheme({ ...theme, dashboardSubtitleFontSize: parseInt(e.target.value) })}
+                        className="w-full accent-brand-blue h-1.5"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

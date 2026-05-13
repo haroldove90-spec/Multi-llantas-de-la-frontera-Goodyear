@@ -54,20 +54,12 @@ export default function BranchSelector({ onSelect }: BranchSelectorProps) {
             animate={{ scale: 1, opacity: 1 }}
             className="flex justify-center mb-6"
           >
-             <div 
-               className={`flex items-center justify-center rounded-3xl overflow-hidden ${theme.showLogoContainer ? 'bg-brand-red p-6 shadow-2xl shadow-brand-red/20' : ''}`}
-               style={{ 
-                 width: theme.showLogoContainer ? `calc(${theme.logoSizeHome || 120}px * 1.5)` : 'auto', 
-                 height: theme.showLogoContainer ? `calc(${theme.logoSizeHome || 120}px * 1.5)` : 'auto' 
-               }}
-             >
-               <img 
-                 src="https://appdesign.appdesignproyectos.com/multillantas.png" 
-                 alt="Logo" 
-                 style={{ width: `${theme.logoSizeHome || 120}px` }} 
-                 className="object-contain" 
-               />
-             </div>
+             <img 
+               src="https://appdesign.appdesignproyectos.com/multillantas.png" 
+               alt="Logo" 
+               style={{ width: `${theme.logoSizeHome || 120}px` }} 
+               className="object-contain" 
+             />
           </motion.div>
           <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 uppercase">
             {(theme.dashboardTitle || 'Multillantas de la Frontera').split(' ')[0]} <span className="text-brand-red">{(theme.dashboardTitle || 'Multillantas de la Frontera').split(' ').slice(1).join(' ')}</span>
