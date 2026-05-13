@@ -27,7 +27,11 @@ import {
   Pie
 } from 'recharts';
 
-export default function Dashboard() {
+interface DashboardProps {
+  userRole?: 'admin' | 'vendedor' | null;
+}
+
+export default function Dashboard({ userRole }: DashboardProps) {
   // Calculate stats
   const totalSales = SALES.reduce((acc, sale) => acc + sale.total, 0);
   const totalCost = SALES.reduce((acc, sale) => {
@@ -37,7 +41,8 @@ export default function Dashboard() {
     }, 0);
   }, 0);
   const totalMargin = totalSales - totalCost;
-  const marginPercentage = (totalMargin / totalSales) * 100;
+
+  const isAdmin = userRole === 'admin';
 
   // Branch Performance
   const branchData = BRANCHES.map(branch => {
@@ -54,7 +59,6 @@ export default function Dashboard() {
       name: branch.name.replace('Sucursal ', ''),
       revenue,
       utility,
-      margin: revenue > 0 ? (utility / revenue) * 100 : 0
     };
   });
 
@@ -82,8 +86,15 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Utilidad Real (Ebitda)', value: `$${totalMargin.toLocaleString()}`, trend: '+12.4%', subtext: 'vs Mes Anterior', icon: DollarSign, color: 'text-blue-600' },
-          { label: 'Valor Inventario', value: `$${(totalCost * 2.1).toLocaleString()}`, subtext: 'Capital Inmovilizado', icon: Package, color: 'text-slate-900' },
+          { 
+            label: isAdmin ? 'Utilidad Real (Ebitda)' : 'Ventas Totales', 
+            value: isAdmin ? `$${totalMargin.toLocaleString()}` : `$${totalSales.toLocaleString()}`, 
+            trend: '+12.4%', 
+            subtext: 'vs Mes Anterior', 
+            icon: isAdmin ? DollarSign : ShoppingCart, 
+            color: isAdmin ? 'text-blue-600' : 'text-emerald-600' 
+          },
+          { label: 'Valor Inventario', value: isAdmin ? `$${(totalCost * 2.1).toLocaleString()}` : 'STOCK ACTIVO', subtext: isAdmin ? 'Capital Inmovilizado' : 'Consolidado', icon: Package, color: 'text-slate-900' },
           { label: 'Baja Rotación (>20d)', value: TIRES.filter(t => {
             const today = new Date('2024-05-13');
             const lastMov = new Date(t.lastMovement);
@@ -134,23 +145,25 @@ export default function Dashboard() {
                   <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-slate-600">
                     <span>{branch.name}</span>
                     <div className="flex gap-4">
-                       <span className="text-slate-400">COSTO: ${(branch.revenue - branch.utility).toLocaleString()}</span>
-                       <span className="text-blue-600 font-black">${branch.utility.toLocaleString()} U.</span>
+                       {isAdmin && <span className="text-slate-400">COSTO: ${(branch.revenue - branch.utility).toLocaleString()}</span>}
+                       <span className="text-blue-600 font-black">${(isAdmin ? branch.utility : branch.revenue).toLocaleString()} {isAdmin ? 'U.' : 'V.'}</span>
                     </div>
                   </div>
                   <div className="relative h-5 bg-slate-100 rounded overflow-hidden flex">
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${width * 0.6}%` }}
+                      animate={{ width: isAdmin ? `${width * 0.6}%` : `${width}%` }}
                       transition={{ duration: 1, delay: i * 0.1 }}
-                      className="h-full bg-slate-200 border-r border-white/20"
+                      className={`h-full ${isAdmin ? 'bg-slate-200 border-r border-white/20' : 'bg-blue-600'}`}
                     />
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${width * 0.4}%` }}
-                      transition={{ duration: 1, delay: i * 0.1 + 0.2 }}
-                      className="h-full bg-blue-600"
-                    />
+                    {isAdmin && (
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${width * 0.4}%` }}
+                        transition={{ duration: 1, delay: i * 0.1 + 0.2 }}
+                        className="h-full bg-blue-600"
+                      />
+                    )}
                   </div>
                 </div>
               );

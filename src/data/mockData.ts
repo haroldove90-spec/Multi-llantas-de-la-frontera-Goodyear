@@ -7,6 +7,13 @@ export interface Branch {
   schedule: string;
 }
 
+export interface BranchSummary {
+  branchId: string;
+  dailySales: number;
+  lowStockCount: number;
+  employeeCount: number;
+}
+
 export interface Tire {
   id: string;
   brand: string;
@@ -89,6 +96,12 @@ export const BRANCHES: Branch[] = [
     phone: '999 923 4567',
     schedule: 'Lun-Vie 8:00 - 18:00, Sab 8:00 - 13:00'
   },
+];
+
+export const BRANCH_SUMMARIES: BranchSummary[] = [
+  { branchId: 'matriz', dailySales: 15450, lowStockCount: 5, employeeCount: 12 },
+  { branchId: 'poniente', dailySales: 8200, lowStockCount: 2, employeeCount: 8 },
+  { branchId: 'sur', dailySales: 12100, lowStockCount: 12, employeeCount: 10 },
 ];
 
 export const TIRES: Tire[] = [

@@ -17,19 +17,22 @@ import { motion } from 'motion/react';
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  userRole: 'admin' | 'vendedor' | null;
 }
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'inventory', label: 'Inventario', icon: Package },
-  { id: 'sales', label: 'Ventas', icon: ShoppingCart },
-  { id: 'transfers', label: 'Traspasos', icon: Truck },
-  { id: 'warranties', label: 'Garantías', icon: ShieldCheck },
-  { id: 'fiscal', label: 'Centro Fiscal', icon: FileText },
-  { id: 'branches', label: 'Sucursales', icon: Store },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin'] },
+  { id: 'inventory', label: 'Inventario', icon: Package, roles: ['admin', 'vendedor'] },
+  { id: 'sales', label: 'Ventas', icon: ShoppingCart, roles: ['admin', 'vendedor'] },
+  { id: 'transfers', label: 'Traspasos', icon: Truck, roles: ['admin'] },
+  { id: 'warranties', label: 'Garantías', icon: ShieldCheck, roles: ['admin', 'vendedor'] },
+  { id: 'fiscal', label: 'Centro Fiscal', icon: FileText, roles: ['admin'] },
+  { id: 'branches', label: 'Sucursales', icon: Store, roles: ['admin'] },
 ];
 
-export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
+export default function Sidebar({ activeTab, setActiveTab, userRole }: SidebarProps) {
+  const filteredNavItems = navItems.filter(item => userRole && item.roles.includes(userRole));
+
   return (
     <aside id="sidebar" className="w-64 h-screen bg-slate-900 text-slate-300 flex flex-col fixed left-0 top-0 border-r border-slate-800 shrink-0">
       <div className="p-6 flex items-center gap-3 border-b border-slate-800">
@@ -40,7 +43,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       </div>
 
       <nav className="flex-1 mt-6 px-4 space-y-1">
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
