@@ -90,6 +90,12 @@ export default function Customization() {
     
     // Global synchronization via Supabase
     try {
+      if (!supabase) {
+        setIsSaved(true);
+        setTimeout(() => setIsSaved(false), 2000);
+        return;
+      }
+
       await supabase
         .from('app_config')
         .upsert({ id: 'global', theme: theme });

@@ -102,7 +102,7 @@ export interface Sale {
 export const BRANCHES: Branch[] = [
   { 
     id: 'matriz', 
-    name: 'Matriz - Centro', 
+    name: 'Centro', 
     location: 'Av. Constitución 450, Monterrey, NL',
     manager: 'Ing. Ricardo Salgado',
     phone: '81 8345 6789',
@@ -110,7 +110,7 @@ export const BRANCHES: Branch[] = [
   },
   { 
     id: 'norte', 
-    name: 'Sucursal Norte', 
+    name: 'Norte', 
     location: 'Blvd. Manuel Ávila Camacho 23, CDMX',
     manager: 'Lic. Martha Ruiz',
     phone: '55 5234 5678',
@@ -118,7 +118,7 @@ export const BRANCHES: Branch[] = [
   },
   { 
     id: 'sur', 
-    name: 'Sucursal Frontera', 
+    name: 'Frontera', 
     location: 'Prolongación Montejo 12, Mérida, YUC',
     manager: 'C.P. Julian Cantón',
     phone: '999 923 4567',

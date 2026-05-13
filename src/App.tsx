@@ -73,6 +73,8 @@ export default function App() {
   // Sync with Supabase
   useEffect(() => {
     const fetchConfig = async () => {
+      if (!supabase) return;
+      
       const { data, error } = await supabase
         .from('app_config')
         .select('theme')
@@ -90,19 +92,22 @@ export default function App() {
     fetchConfig();
 
     // Subscribe to changes
-    const channel = supabase
-      .channel('app_config_changes')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'app_config',
-        filter: 'id=eq.global'
-      }, (payload) => {
-        if (payload.new && payload.new.theme) {
-          applyTheme(payload.new.theme);
-        }
-      })
-      .subscribe();
+    let channel: any = null;
+    if (supabase) {
+      channel = supabase
+        .channel('app_config_changes')
+        .on('postgres_changes', { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'app_config',
+          filter: 'id=eq.global'
+        }, (payload: any) => {
+          if (payload.new && payload.new.theme) {
+            applyTheme(payload.new.theme);
+          }
+        })
+        .subscribe();
+    }
 
     const handleThemeUpdate = (e: any) => {
       applyTheme(e.detail);
@@ -111,7 +116,7 @@ export default function App() {
     window.addEventListener('theme-update', handleThemeUpdate);
     
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
       window.removeEventListener('theme-update', handleThemeUpdate);
     };
   }, []);
