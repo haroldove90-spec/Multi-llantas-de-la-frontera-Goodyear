@@ -9,17 +9,28 @@ import FiscalCenter from './components/FiscalCenter';
 import Branches from './components/Branches';
 import Customization from './components/Customization';
 import BranchSelector from './components/BranchSelector';
+import Notifications from './components/Notifications';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight } from 'lucide-react';
+import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight, Menu } from 'lucide-react';
 import { BRANCHES, UserRole } from './data/mockData';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [theme, setTheme] = useState<any>(() => {
+    const defaultData = { dashboardTitle: 'Multillantas de la Frontera', showLogoContainer: true };
     const saved = localStorage.getItem('erp_theme');
-    return saved ? JSON.parse(saved) : { dashboardTitle: 'Multillantas de la Frontera', showLogoContainer: true };
+    if (saved) {
+      try {
+        return { ...defaultData, ...JSON.parse(saved) };
+      } catch (e) {
+        return defaultData;
+      }
+    }
+    return defaultData;
   });
 
   // Apply saved theme on mount
@@ -98,15 +109,28 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-interface-bg font-sans flex text-white overflow-hidden h-screen">
-      <div className="hidden md:block">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} userRole={userRole} />
-      </div>
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={(tab) => {
+          setActiveTab(tab);
+          setIsSidebarOpen(false);
+        }} 
+        userRole={userRole} 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
       
       <main className="flex-1 md:ml-64 flex flex-col h-screen min-w-0">
         {/* Top Header */}
         <header className="h-16 bg-card-bg border-b border-interface-bg flex items-center justify-between px-6 md:px-8 shrink-0 sticky top-0 z-30">
           <div className="flex items-center gap-3">
-             <div onClick={handleLogout} className="md:hidden cursor-pointer flex items-center justify-center">
+             <button 
+               onClick={() => setIsSidebarOpen(true)}
+               className="md:hidden p-2 text-text-muted hover:text-white"
+             >
+               <Menu className="w-6 h-6" />
+             </button>
+             <div onClick={handleLogout} className="cursor-pointer flex items-center justify-center">
                {theme.showLogoContainer ? (
                  <div 
                    className="bg-brand-red rounded flex items-center justify-center overflow-hidden" 
@@ -152,15 +176,23 @@ export default function App() {
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
-            <button className="p-1.5 text-text-muted hover:text-white transition-colors relative">
+            <button 
+              onClick={() => setIsNotificationsOpen(true)}
+              className="p-1.5 text-text-muted hover:text-white transition-colors relative"
+            >
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-brand-red rounded-full border-2 border-card-bg"></span>
             </button>
           </div>
         </header>
 
+        <Notifications 
+          isOpen={isNotificationsOpen} 
+          onClose={() => setIsNotificationsOpen(false)} 
+        />
+
         {/* Content Area */}
-        <section className="flex-1 p-4 md:p-8 overflow-y-auto mb-16 md:mb-0">
+        <section className="flex-1 p-4 md:p-8 overflow-y-auto">
           <div className="max-w-7xl mx-auto">
             <AnimatePresence mode="wait">
               <motion.div
@@ -175,26 +207,6 @@ export default function App() {
             </AnimatePresence>
           </div>
         </section>
-
-        {/* Mobile Bottom Navigation */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card-bg border-t border-interface-bg px-4 py-2 flex justify-around items-center z-50">
-          {navItems.filter(item => userRole && item.roles.includes(userRole)).slice(0, 5).map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${
-                  isActive ? 'text-brand-red' : 'text-text-muted'
-                }`}
-              >
-                <Icon className={`w-6 h-6 ${isActive ? 'scale-110' : ''} transition-transform`} />
-                <span className="text-[8px] font-black uppercase tracking-tighter">{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
 
         {/* Bottom Status Bar Desktop */}
         <footer className="hidden md:flex h-10 bg-interface-bg text-white items-center px-8 text-[10px] justify-between shrink-0 border-t border-card-bg">

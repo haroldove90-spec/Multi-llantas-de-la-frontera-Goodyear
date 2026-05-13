@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, 
   Package, 
@@ -10,7 +10,8 @@ import {
   Settings,
   HelpCircle,
   FileText,
-  Palette
+  Palette,
+  X
 } from 'lucide-react';
 import { UserRole } from '../data/mockData';
 
@@ -18,6 +19,8 @@ interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   userRole: UserRole | null;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export const navItems = [
@@ -31,11 +34,19 @@ export const navItems = [
   { id: 'branches', label: 'Sucursales', icon: Store, roles: ['superadmin'] },
 ];
 
-export default function Sidebar({ activeTab, setActiveTab, userRole }: SidebarProps) {
+export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onClose }: SidebarProps) {
   const filteredNavItems = navItems.filter(item => userRole && item.roles.includes(userRole));
   const [theme, setTheme] = React.useState<any>(() => {
+    const defaultData = { dashboardTitle: 'Multillantas de la Frontera', showLogoContainer: true };
     const saved = localStorage.getItem('erp_theme');
-    return saved ? JSON.parse(saved) : { dashboardTitle: 'Multillantas de la Frontera', showLogoContainer: true };
+    if (saved) {
+      try {
+        return { ...defaultData, ...JSON.parse(saved) };
+      } catch (e) {
+        return defaultData;
+      }
+    }
+    return defaultData;
   });
 
   React.useEffect(() => {
@@ -62,9 +73,36 @@ export default function Sidebar({ activeTab, setActiveTab, userRole }: SidebarPr
   };
 
   return (
-    <aside id="sidebar" className="w-64 h-screen bg-card-bg text-white flex flex-col fixed left-0 top-0 border-r border-white/5 shrink-0 z-40">
-      <div className="p-6 flex flex-col gap-4 border-b border-white/5 bg-interface-bg/30">
-        <div className="flex items-center gap-3">
+    <>
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      <aside 
+        id="sidebar" 
+        className={`w-64 h-screen bg-card-bg text-white flex flex-col fixed left-0 top-0 border-r border-white/5 shrink-0 z-50 transition-transform duration-300 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
+      >
+        <div className="p-6 flex flex-col gap-4 border-b border-white/5 bg-interface-bg/30 relative">
+          {onClose && (
+            <button 
+              onClick={onClose}
+              className="absolute top-4 right-4 p-1 rounded-lg hover:bg-white/5 md:hidden text-text-muted transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+          <div className="flex items-center gap-3">
           {theme.showLogoContainer ? (
             <div 
               className="bg-brand-red rounded flex items-center justify-center overflow-hidden shrink-0" 
@@ -148,5 +186,6 @@ export default function Sidebar({ activeTab, setActiveTab, userRole }: SidebarPr
         </div>
       </div>
     </aside>
+    </>
   );
 }

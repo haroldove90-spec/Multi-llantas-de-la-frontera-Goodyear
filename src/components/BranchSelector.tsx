@@ -8,6 +8,28 @@ interface BranchSelectorProps {
 }
 
 export default function BranchSelector({ onSelect }: BranchSelectorProps) {
+  const [theme, setTheme] = React.useState<any>(() => {
+    const defaultData = { dashboardTitle: 'Multillantas de la Frontera', logoSize: 64, showLogoContainer: true };
+    const saved = localStorage.getItem('erp_theme');
+    if (saved) {
+      try {
+        return { ...defaultData, ...JSON.parse(saved) };
+      } catch (e) {
+        return defaultData;
+      }
+    }
+    return defaultData;
+  });
+
+  React.useEffect(() => {
+    const handleThemeUpdate = (e: any) => {
+      setTheme(e.detail);
+    };
+
+    window.addEventListener('theme-update', handleThemeUpdate);
+    return () => window.removeEventListener('theme-update', handleThemeUpdate);
+  }, []);
+
   const roles: { id: UserRole; label: string; icon: any; color: string; desc: string }[] = [
     { id: 'superadmin', label: 'Administrador', icon: ShieldCheck, color: 'bg-brand-red', desc: 'Control Total y Auditoría' },
     { id: 'gerente', label: 'Técnico / Asesor', icon: UserCog, color: 'bg-brand-blue', desc: 'Gestión Técnica e Inventario' },
@@ -25,9 +47,24 @@ export default function BranchSelector({ onSelect }: BranchSelectorProps) {
             animate={{ scale: 1, opacity: 1 }}
             className="flex justify-center mb-6"
           >
-             <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" className="w-48 md:w-64 object-contain" />
+             <div 
+               className={`flex items-center justify-center rounded-3xl overflow-hidden ${theme.showLogoContainer ? 'bg-brand-red p-6 shadow-2xl shadow-brand-red/20' : ''}`}
+               style={{ 
+                 width: theme.showLogoContainer ? `calc(${theme.logoSize}px * 1.5)` : 'auto', 
+                 height: theme.showLogoContainer ? `calc(${theme.logoSize}px * 1.5)` : 'auto' 
+               }}
+             >
+               <img 
+                 src="https://appdesign.appdesignproyectos.com/multillantas.png" 
+                 alt="Logo" 
+                 style={{ width: `${theme.logoSize * 1.5}px` }} 
+                 className="object-contain" 
+               />
+             </div>
           </motion.div>
-          <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 uppercase">Portal <span className="text-brand-red">Multillantas</span></h1>
+          <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 uppercase">
+            {(theme.dashboardTitle || 'Multillantas de la Frontera').split(' ')[0]} <span className="text-brand-red">{(theme.dashboardTitle || 'Multillantas de la Frontera').split(' ').slice(1).join(' ')}</span>
+          </h1>
           <p className="text-text-muted font-bold text-lg uppercase tracking-[0.3em]">Seleccione Sucursal de Operación</p>
         </div>
 
