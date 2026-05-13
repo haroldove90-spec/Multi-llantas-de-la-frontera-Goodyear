@@ -5,9 +5,12 @@ import { motion } from 'motion/react';
 
 interface WarrantiesProps {
   userRole?: UserRole | null;
+  branchId?: string | null;
 }
 
-export default function Warranties({ userRole }: WarrantiesProps) {
+export default function Warranties({ userRole, branchId }: WarrantiesProps) {
+  const isGerente = userRole === 'gerente';
+  const isSuperAdmin = userRole === 'superadmin';
   return (
     <div className="space-y-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -96,6 +99,14 @@ export default function Warranties({ userRole }: WarrantiesProps) {
                       <p className="text-[11px] font-bold text-slate-500 italic">
                         {warranty.diagnosis}
                       </p>
+                    </div>
+                  )}
+                  {!warranty.diagnosis && (isGerente || isSuperAdmin) && (
+                    <div className="pt-3 border-t border-slate-200 flex justify-end">
+                      <button className="px-3 py-1.5 bg-slate-900 text-white rounded text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-2">
+                        <ShieldAlert className="w-3 h-3 text-blue-400" />
+                        Dictaminar Garantía
+                      </button>
                     </div>
                   )}
                 </div>

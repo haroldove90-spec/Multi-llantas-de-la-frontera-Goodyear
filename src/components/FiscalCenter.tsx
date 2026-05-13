@@ -95,6 +95,79 @@ export default function FiscalCenter({ userRole }: FiscalCenterProps) {
         </motion.div>
       )}
 
+      {/* Bank Reconciliation Section for Accountants */}
+      {(isContador || userRole === 'superadmin') && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-slate-900 p-8 rounded-3xl text-white shadow-2xl">
+            <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-400" />
+              Conciliación Efectivo vs Depósitos
+            </h3>
+            <div className="space-y-6">
+              {[
+                { label: 'Cierres de Caja (Sucursales)', value: '$145,900', status: 'ready' },
+                { label: 'Ingresos Bancarios (SAT)', value: '$145,000', status: 'warning', diff: '-$900' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+                  <div>
+                    <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">{item.label}</p>
+                    <p className="text-2xl font-black text-white">{item.value}</p>
+                  </div>
+                  {item.diff && (
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-red-400 uppercase tracking-widest">Diferencia</p>
+                      <p className="text-lg font-black text-red-500">{item.diff}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+              <div className="pt-4 flex gap-3">
+                <button className="flex-1 py-4 bg-emerald-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all">
+                  Marcar como Conciliado
+                </button>
+                <button className="px-6 py-4 bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white/20 transition-all">
+                  Exportar Reporte
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl overflow-hidden relative">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Pólizas Contables</h3>
+              <div className="flex gap-2">
+                <button className="bg-slate-50 p-2 rounded-lg hover:bg-slate-100 transition-colors">
+                  <Download className="w-4 h-4 text-blue-600" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              {[
+                { name: 'CONTPAQi i', format: 'XML/XLS', last: 'Hoy 10:20 AM' },
+                { name: 'Aspel COI', format: 'TXT/POL', last: 'Ayer' },
+                { name: 'SAP Business One', format: 'CSV', last: '12 May' },
+              ].map((software, i) => (
+                <div key={i} className="flex items-center justify-between p-4 border border-slate-100 rounded-2xl hover:border-blue-200 hover:shadow-sm transition-all group">
+                   <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-50">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-slate-800 uppercase leading-none mb-1">{software.name}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Formato: {software.format} • Ult: {software.last}</p>
+                      </div>
+                   </div>
+                   <button className="text-[10px] font-black text-blue-600 uppercase border border-blue-100 px-4 py-2 rounded-lg hover:bg-blue-600 hover:text-white transition-all">
+                      Descargar
+                   </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Fiscal Indicators */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group">

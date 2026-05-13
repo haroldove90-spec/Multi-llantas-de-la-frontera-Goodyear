@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import { Package, Search, Filter, Plus, MoreHorizontal, ArrowRightLeft, ShoppingCart } from 'lucide-react';
-import { TIRES, BRANCHES } from '../data/mockData';
+import { TIRES, BRANCHES, UserRole } from '../data/mockData';
 import { motion } from 'motion/react';
 
 interface InventoryProps {
-  userRole?: 'admin' | 'vendedor' | null;
+  userRole?: UserRole | null;
+  branchId?: string | null;
 }
 
-export default function Inventory({ userRole }: InventoryProps) {
+export default function Inventory({ userRole, branchId }: InventoryProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const isSuperAdmin = userRole === 'superadmin';
+  const isGerente = userRole === 'gerente';
+  const hasAccessToCost = isSuperAdmin || isGerente;
+  const canManagePrice = isSuperAdmin;
+  const canLoadStock = isSuperAdmin || isGerente;
 
   const filteredTires = TIRES.filter(tire => 
     tire.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -22,11 +28,19 @@ export default function Inventory({ userRole }: InventoryProps) {
           <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase">Inventario Maestro</h2>
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Stock Consolidado (3 Sucursales)</p>
         </div>
-        {userRole === 'admin' && (
+        {canManagePrice && (
           <div className="flex gap-2">
             <button className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-[11px] font-black uppercase tracking-widest shadow-xl shadow-slate-900/20">
               <Plus className="w-4 h-4" />
-              Nuevo SKU
+              Gestión de Precios
+            </button>
+          </div>
+        )}
+        {canLoadStock && (
+          <div className="flex gap-2">
+            <button className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all text-[11px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/20">
+              <Plus className="w-4 h-4" />
+              Carga de Proveedor
             </button>
           </div>
         )}
@@ -37,7 +51,7 @@ export default function Inventory({ userRole }: InventoryProps) {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Buscar por marca, modelo o medida..."
+            placeholder="Buscador Inteligente: 245/75R16, Marca o Modelo..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm transition-all shadow-sm font-bold text-slate-600 placeholder:text-slate-300"
@@ -57,11 +71,11 @@ export default function Inventory({ userRole }: InventoryProps) {
               <tr className="bg-slate-50 text-slate-500 text-[10px] uppercase font-black sticky top-0 border-b border-slate-100">
                 <th className="px-6 py-5 tracking-widest">Producto</th>
                 <th className="px-6 py-5 tracking-widest">Medida / Especificación</th>
-                <th className="px-6 py-5 tracking-widest text-center">Matriz</th>
-                <th className="px-6 py-5 tracking-widest text-center">Poniente</th>
-                <th className="px-6 py-5 tracking-widest text-center">Sur</th>
+                {BRANCHES.map(branch => (
+                  <th key={branch.id} className="px-6 py-5 tracking-widest text-center">{branch.name.replace('Sucursal ', '')}</th>
+                ))}
                 <th className="px-6 py-5 tracking-widest text-right">Precio</th>
-                {userRole === 'admin' && <th className="px-6 py-5 tracking-widest text-right text-emerald-600">Costo</th>}
+                {hasAccessToCost && <th className="px-6 py-5 tracking-widest text-right text-emerald-600">Costo</th>}
                 <th className="px-6 py-5 tracking-widest text-right">Existencia</th>
               </tr>
             </thead>
@@ -108,7 +122,7 @@ export default function Inventory({ userRole }: InventoryProps) {
                     <td className="px-6 py-4 text-right font-black text-slate-900">
                       ${tire.price.toLocaleString()}
                     </td>
-                    {userRole === 'admin' && (
+                    {hasAccessToCost && (
                       <td className="px-6 py-4 text-right">
                         <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md font-black text-[11px]">
                           ${tire.cost.toLocaleString()}

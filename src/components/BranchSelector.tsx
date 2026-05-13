@@ -31,6 +31,29 @@ export default function BranchSelector({ onSelect }: BranchSelectorProps) {
           <p className="text-slate-400 font-bold text-lg uppercase tracking-widest">Portal de Acceso Multi-sucursal</p>
         </div>
 
+        {/* Global Access for SuperAdmin */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md mx-auto mb-12"
+        >
+          <button 
+            onClick={() => onSelect('all', 'superadmin')}
+            className="w-full bg-purple-600/10 hover:bg-purple-600/20 border border-purple-500/30 p-6 rounded-[2rem] flex items-center justify-between group transition-all"
+          >
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 bg-purple-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-purple-600/20 group-hover:scale-110 transition-transform">
+                <ShieldCheck className="w-8 h-8" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-xl font-black text-purple-400 uppercase tracking-tighter">Vista Global Corporativa</h3>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Consolida 3 Sucursales (Sólo Dueño)</p>
+              </div>
+            </div>
+            <ChevronRight className="w-6 h-6 text-purple-500 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </motion.div>
+
         {/* Grid de Sucursales */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
           {BRANCHES.map((branch, idx) => {

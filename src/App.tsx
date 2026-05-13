@@ -17,7 +17,9 @@ export default function App() {
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
 
-  const selectedBranch = BRANCHES.find(b => b.id === selectedBranchId);
+  const selectedBranch = selectedBranchId === 'all' 
+    ? { name: 'Corporativo Global', id: 'all' } 
+    : BRANCHES.find(b => b.id === selectedBranchId);
 
   const handleBranchSelect = (branchId: string, role: UserRole) => {
     setSelectedBranchId(branchId);
@@ -41,19 +43,19 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard userRole={userRole} />;
+        return <Dashboard userRole={userRole} branchId={selectedBranchId} />;
       case 'inventory':
-        return <Inventory userRole={userRole} />;
+        return <Inventory userRole={userRole} branchId={selectedBranchId} />;
       case 'sales':
-        return <Sales userRole={userRole} />;
+        return <Sales userRole={userRole} branchId={selectedBranchId} />;
       case 'transfers':
-        return <Transfers userRole={userRole} />;
+        return <Transfers userRole={userRole} branchId={selectedBranchId} />;
       case 'warranties':
-        return <Warranties userRole={userRole} />;
+        return <Warranties userRole={userRole} branchId={selectedBranchId} />;
       case 'fiscal':
-        return <FiscalCenter userRole={userRole} />;
+        return <FiscalCenter userRole={userRole} branchId={selectedBranchId} />;
       case 'branches':
-        return <Branches userRole={userRole} />;
+        return <Branches userRole={userRole} branchId={selectedBranchId} />;
       default:
         return <Dashboard userRole={userRole} />;
     }

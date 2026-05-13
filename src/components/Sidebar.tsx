@@ -19,7 +19,7 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['superadmin', 'gerente'] },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['superadmin', 'gerente', 'vendedor'] },
   { id: 'inventory', label: 'Inventario', icon: Package, roles: ['superadmin', 'gerente', 'contador', 'vendedor'] },
   { id: 'sales', label: 'Ventas', icon: ShoppingCart, roles: ['superadmin', 'gerente', 'contador', 'vendedor'] },
   { id: 'transfers', label: 'Traspasos', icon: Truck, roles: ['superadmin', 'gerente'] },

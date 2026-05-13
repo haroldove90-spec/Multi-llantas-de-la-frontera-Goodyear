@@ -5,9 +5,12 @@ import { motion } from 'motion/react';
 
 interface TransfersProps {
   userRole?: UserRole | null;
+  branchId?: string | null;
 }
 
-export default function Transfers({ userRole }: TransfersProps) {
+export default function Transfers({ userRole, branchId }: TransfersProps) {
+  const isGerente = userRole === 'gerente';
+  const isSuperAdmin = userRole === 'superadmin';
   return (
     <div className="space-y-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -89,13 +92,20 @@ export default function Transfers({ userRole }: TransfersProps) {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
-                        transfer.status === 'Recibido' ? 'bg-green-100 text-green-700' :
-                        transfer.status === 'En tránsito' ? 'bg-orange-100 text-orange-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {transfer.status}
-                      </span>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
+                          transfer.status === 'Recibido' ? 'bg-green-100 text-green-700' :
+                          transfer.status === 'En tránsito' ? 'bg-orange-100 text-orange-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {transfer.status}
+                        </span>
+                        {(isSuperAdmin || (isGerente && branchId === transfer.destinationBranchId)) && transfer.status === 'En tránsito' && (
+                          <button className="text-[9px] font-black text-blue-600 uppercase border border-blue-200 px-2 py-1 rounded hover:bg-blue-50 transition-colors">
+                            Confirmar Recepción
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </motion.tr>
                 );
