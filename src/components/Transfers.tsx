@@ -1,9 +1,13 @@
 import React from 'react';
 import { Truck, ArrowRight, CheckCircle2, Clock, XCircle, Search } from 'lucide-react';
-import { TRANSFERS, BRANCHES, TIRES } from '../data/mockData';
+import { TRANSFERS, BRANCHES, TIRES, UserRole } from '../data/mockData';
 import { motion } from 'motion/react';
 
-export default function Transfers() {
+interface TransfersProps {
+  userRole?: UserRole | null;
+}
+
+export default function Transfers({ userRole }: TransfersProps) {
   return (
     <div className="space-y-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">

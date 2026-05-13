@@ -10,14 +10,21 @@ import {
   Clock, 
   XCircle, 
   AlertTriangle,
+  AlertCircle,
   History,
   ArrowUpRight,
   ShieldAlert
 } from 'lucide-react';
 
-export default function FiscalCenter() {
+interface FiscalCenterProps {
+  userRole?: UserRole | null;
+}
+
+export default function FiscalCenter({ userRole }: FiscalCenterProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'All' | 'Timbrada' | 'Pendiente' | 'Cancelada'>('All');
+  
+  const isContador = userRole === 'contador';
 
   const filteredSales = SALES.filter(sale => {
     const matchesSearch = sale.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -50,24 +57,43 @@ export default function FiscalCenter() {
   return (
     <div className="space-y-8 pb-20">
       {/* Top Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-            CONCILIACIÓN FISCAL & CFDI 4.0
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-2 uppercase">
+            CONCILIACIÓN FISCAL SAT
           </h2>
           <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
-            Centro de Control para Contadores y Auditoría
+            CFDI 4.0 - Centro de Control para Contadores y Auditoría
           </p>
         </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-sm">
-            <Download className="w-4 h-4 text-blue-400" /> Póliza CONTPAQi
+        <div className="flex flex-wrap gap-3">
+          <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
+            <Download className="w-4 h-4" />
+            Descarga XML SAT
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-sm">
-            <Download className="w-4 h-4" /> Factura Global Day
+          <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 active:scale-95">
+            <Download className="w-4 h-4 text-blue-400" />
+            Póliza CONTPAQi
           </button>
         </div>
       </div>
+
+      {/* Audit Alert for Contador */}
+      {isContador && (
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-2xl flex items-center gap-4 shadow-sm"
+        >
+          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-blue-500 shadow-sm shrink-0">
+             <AlertCircle className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-sm font-black text-blue-900 uppercase tracking-tight mb-1">Modo Auditoría Profesional</p>
+            <p className="text-xs font-bold text-blue-600/80 uppercase tracking-wide">Acceso de solo lectura activo. Conciliación bancaria y folios fiscales habilitados.</p>
+          </div>
+        </motion.div>
+      )}
 
       {/* Fiscal Indicators */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

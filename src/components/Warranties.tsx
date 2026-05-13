@@ -1,9 +1,13 @@
 import React from 'react';
 import { ShieldAlert, History, FileText, CheckCircle, AlertTriangle } from 'lucide-react';
-import { WARRANTIES, TIRES } from '../data/mockData';
+import { WARRANTIES, TIRES, UserRole } from '../data/mockData';
 import { motion } from 'motion/react';
 
-export default function Warranties() {
+interface WarrantiesProps {
+  userRole?: UserRole | null;
+}
+
+export default function Warranties({ userRole }: WarrantiesProps) {
   return (
     <div className="space-y-6">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">

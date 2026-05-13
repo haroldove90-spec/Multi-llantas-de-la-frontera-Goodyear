@@ -10,21 +10,20 @@ import Branches from './components/Branches';
 import BranchSelector from './components/BranchSelector';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight } from 'lucide-react';
-import { BRANCHES } from './data/mockData';
+import { BRANCHES, UserRole } from './data/mockData';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<'admin' | 'vendedor' | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
 
   const selectedBranch = BRANCHES.find(b => b.id === selectedBranchId);
 
-  const handleBranchSelect = (branchId: string, role: string) => {
+  const handleBranchSelect = (branchId: string, role: UserRole) => {
     setSelectedBranchId(branchId);
-    const r = role as 'admin' | 'vendedor';
-    setUserRole(r);
-    if (r === 'vendedor') {
-      setActiveTab('sales');
+    setUserRole(role);
+    if (role === 'vendedor' || role === 'contador') {
+      setActiveTab(role === 'vendedor' ? 'sales' : 'fiscal');
     } else {
       setActiveTab('dashboard');
     }
@@ -83,7 +82,13 @@ export default function App() {
           <div className="flex items-center gap-4 md:gap-6">
             <div className="hidden sm:flex items-center gap-4 mr-4 border-r border-slate-100 pr-6">
               <div className="flex flex-col items-end">
-                <span className="text-[10px] font-black text-slate-800 uppercase tracking-tight">{userRole === 'admin' ? 'Super Admin' : 'Vendedor'}</span>
+                <span className={`text-[10px] font-black uppercase tracking-tight ${
+                  userRole === 'superadmin' ? 'text-purple-600' :
+                  userRole === 'gerente' ? 'text-blue-600' :
+                  userRole === 'contador' ? 'text-emerald-600' : 'text-orange-600'
+                }`}>
+                  {userRole?.replace('_', ' ')}
+                </span>
                 <span className="text-[9px] font-bold text-slate-400 uppercase">Sincronizado</span>
               </div>
               <button 

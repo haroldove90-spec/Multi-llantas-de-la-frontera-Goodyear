@@ -1,20 +1,30 @@
 import React from 'react';
-import { ShoppingCart, User, Receipt, CreditCard, Calendar, BarChart3 } from 'lucide-react';
-import { SALES, BRANCHES, TIRES } from '../data/mockData';
+import { ShoppingCart, User, Receipt, CreditCard, Calendar, BarChart3, Plus, Download, FileText, AlertCircle } from 'lucide-react';
+import { SALES, BRANCHES, TIRES, UserRole } from '../data/mockData';
 import { motion } from 'motion/react';
 
-export default function Sales() {
+interface SalesProps {
+  userRole?: UserRole | null;
+}
+
+export default function Sales({ userRole }: SalesProps) {
+  const isVendedor = userRole === 'vendedor';
+  const isContador = userRole === 'contador';
+  const isAdminOrGerente = userRole === 'superadmin' || userRole === 'gerente';
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative pb-20">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 tracking-tight">Registro de Operaciones de Venta</h2>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Cumplimiento Fiscal PUE/PPD y Control de Tickets</p>
+          <h2 className="text-2xl font-black text-slate-800 tracking-tight uppercase">Control de Ventas & Facturación</h2>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sincronización Fiscal CFDI 4.0 en Tiempo Real</p>
         </div>
-        <button className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all text-[11px] font-bold uppercase tracking-wider shadow-lg">
-          <ShoppingCart className="w-4 h-4 text-emerald-400" />
-          Nueva Factura
-        </button>
+        {!isContador && (
+          <button className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 active:scale-95 group">
+            <ShoppingCart className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+            Nueva Operación
+          </button>
+        )}
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -117,12 +127,16 @@ export default function Sales() {
           </table>
         </div>
       </div>
+      {/* Floating Action Button for Mobile Vendedor */}
+      {isVendedor && (
+        <motion.button 
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="fixed bottom-6 right-6 md:hidden w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl shadow-blue-600/40 flex items-center justify-center z-50 active:scale-95"
+        >
+          <Plus className="w-8 h-8" />
+        </motion.button>
+      )}
     </div>
   );
 }
-
-const AlertCircle = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-  </svg>
-);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BRANCHES, TIRES, SALES } from '../data/mockData';
+import { BRANCHES, TIRES, SALES, UserRole } from '../data/mockData';
 import { motion } from 'motion/react';
 import { 
   Store, 
@@ -13,7 +13,11 @@ import {
   ShoppingCart
 } from 'lucide-react';
 
-export default function Branches() {
+interface BranchesProps {
+  userRole?: UserRole | null;
+}
+
+export default function Branches({ userRole }: BranchesProps) {
   return (
     <div className="space-y-8 pb-10">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">

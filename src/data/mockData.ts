@@ -1,3 +1,31 @@
+export type UserRole = 'superadmin' | 'gerente' | 'contador' | 'vendedor';
+
+export interface User {
+  id: string;
+  name: string;
+  role: UserRole;
+  branchId: string | 'all'; // 'all' for superadmin
+  email: string;
+}
+
+export const USERS: User[] = [
+  // Matriz
+  { id: 'u1', name: 'Harold (Owner)', role: 'superadmin', branchId: 'all', email: 'harold@tyretrack.com' },
+  { id: 'u2', name: 'Ricardo Salgado', role: 'gerente', branchId: 'matriz', email: 'ricardo.m@tyretrack.com' },
+  { id: 'u3', name: 'Alicia CP', role: 'contador', branchId: 'matriz', email: 'alicia.c@tyretrack.com' },
+  { id: 'u4', name: 'Pedro Ventas', role: 'vendedor', branchId: 'matriz', email: 'pedro.v@tyretrack.com' },
+  // Poniente (Norte/Poniente context)
+  { id: 'u5', name: 'Sofía Admin', role: 'superadmin', branchId: 'all', email: 'sofia@tyretrack.com' },
+  { id: 'u6', name: 'Martha Ruiz', role: 'gerente', branchId: 'poniente', email: 'martha.p@tyretrack.com' },
+  { id: 'u7', name: 'Roberto Conta', role: 'contador', branchId: 'poniente', email: 'roberto.c@tyretrack.com' },
+  { id: 'u8', name: 'Ana Lopez', role: 'vendedor', branchId: 'poniente', email: 'ana.v@tyretrack.com' },
+  // Sur
+  { id: 'u9', name: 'Carlos Master', role: 'superadmin', branchId: 'all', email: 'carlos@tyretrack.com' },
+  { id: 'u10', name: 'Julian Cantón', role: 'gerente', branchId: 'sur', email: 'julian.s@tyretrack.com' },
+  { id: 'u11', name: 'Elena Fiscal', role: 'contador', branchId: 'sur', email: 'elena.c@tyretrack.com' },
+  { id: 'u12', name: 'Hugo Mendez', role: 'vendedor', branchId: 'sur', email: 'hugo.v@tyretrack.com' },
+];
+
 export interface Branch {
   id: string;
   name: string;
