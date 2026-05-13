@@ -9,7 +9,14 @@ interface BranchSelectorProps {
 
 export default function BranchSelector({ onSelect }: BranchSelectorProps) {
   const [theme, setTheme] = React.useState<any>(() => {
-    const defaultData = { dashboardTitle: 'Multillantas de la Frontera', logoSize: 64, showLogoContainer: true };
+    const defaultData = { 
+      dashboardTitle: 'Multillantas de la Frontera', 
+      logoSize: 32,
+      logoSizeTablet: 28,
+      logoSizeMobile: 24,
+      logoSizeHome: 100,
+      showLogoContainer: false 
+    };
     const saved = localStorage.getItem('erp_theme');
     if (saved) {
       try {
@@ -50,14 +57,14 @@ export default function BranchSelector({ onSelect }: BranchSelectorProps) {
              <div 
                className={`flex items-center justify-center rounded-3xl overflow-hidden ${theme.showLogoContainer ? 'bg-brand-red p-6 shadow-2xl shadow-brand-red/20' : ''}`}
                style={{ 
-                 width: theme.showLogoContainer ? `calc(${theme.logoSize}px * 1.5)` : 'auto', 
-                 height: theme.showLogoContainer ? `calc(${theme.logoSize}px * 1.5)` : 'auto' 
+                 width: theme.showLogoContainer ? `calc(${theme.logoSizeHome || 120}px * 1.5)` : 'auto', 
+                 height: theme.showLogoContainer ? `calc(${theme.logoSizeHome || 120}px * 1.5)` : 'auto' 
                }}
              >
                <img 
                  src="https://appdesign.appdesignproyectos.com/multillantas.png" 
                  alt="Logo" 
-                 style={{ width: `${theme.logoSize * 1.5}px` }} 
+                 style={{ width: `${theme.logoSizeHome || 120}px` }} 
                  className="object-contain" 
                />
              </div>

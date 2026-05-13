@@ -21,7 +21,14 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [theme, setTheme] = useState<any>(() => {
-    const defaultData = { dashboardTitle: 'Multillantas de la Frontera', showLogoContainer: true };
+    const defaultData = { 
+      dashboardTitle: 'Multillantas de la Frontera', 
+      logoSize: 32,
+      logoSizeTablet: 28,
+      logoSizeMobile: 24,
+      logoSizeHome: 100,
+      showLogoContainer: false 
+    };
     const saved = localStorage.getItem('erp_theme');
     if (saved) {
       try {
@@ -43,6 +50,9 @@ export default function App() {
       root.style.setProperty('--color-brand-blue', themeData.brandBlue);
       root.style.setProperty('--color-text-muted', themeData.textMuted);
       root.style.setProperty('--logo-size', `${themeData.logoSize}px`);
+      root.style.setProperty('--logo-size-tablet', `${themeData.logoSizeTablet}px`);
+      root.style.setProperty('--logo-size-mobile', `${themeData.logoSizeMobile}px`);
+      root.style.setProperty('--logo-size-home', `${themeData.logoSizeHome}px`);
       root.style.setProperty('--dashboard-title-size', `${themeData.dashboardTitleFontSize}px`);
       root.style.setProperty('--display-logo-container', themeData.showLogoContainer ? 'flex' : 'none');
       setTheme(themeData);
@@ -133,19 +143,41 @@ export default function App() {
              <div onClick={handleLogout} className="cursor-pointer flex items-center justify-center">
                {theme.showLogoContainer ? (
                  <div 
-                   className="bg-brand-red rounded flex items-center justify-center overflow-hidden" 
+                   className="bg-brand-red rounded-lg flex items-center justify-center overflow-hidden shadow-lg shadow-brand-red/10" 
                    style={{ 
-                     width: 'calc(var(--logo-size, 24px) * 1.5)',
-                     height: 'calc(var(--logo-size, 24px) * 1.5)'
+                     width: 'calc(var(--logo-size, 32px) * 1.2)',
+                     height: 'calc(var(--logo-size, 32px) * 1.2)'
                    }}
                  >
-                   <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" style={{ width: 'var(--logo-size, 24px)' }} />
+                   <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" style={{ width: 'var(--logo-size, 32px)' }} className="w-[85%] h-[85%] object-contain" />
                  </div>
                ) : (
-                 <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" style={{ width: 'var(--logo-size, 24px)' }} />
+                 <div className="flex items-center">
+                    {/* Mobile Size */}
+                    <img 
+                      src="https://appdesign.appdesignproyectos.com/multillantas.png" 
+                      alt="Logo" 
+                      style={{ width: 'var(--logo-size-mobile, 24px)' }}
+                      className="object-contain shrink-0 md:hidden" 
+                    />
+                    {/* Tablet Size */}
+                    <img 
+                      src="https://appdesign.appdesignproyectos.com/multillantas.png" 
+                      alt="Logo" 
+                      style={{ width: 'var(--logo-size-tablet, 28px)' }}
+                      className="object-contain shrink-0 hidden md:block lg:hidden" 
+                    />
+                    {/* Desktop Size */}
+                    <img 
+                      src="https://appdesign.appdesignproyectos.com/multillantas.png" 
+                      alt="Logo" 
+                      style={{ width: 'var(--logo-size, 32px)' }}
+                      className="object-contain shrink-0 hidden lg:block" 
+                    />
+                 </div>
                )}
              </div>
-             <div className="flex flex-col">
+             <div className="flex flex-col md:hidden">
                <h1 className="font-black text-white tracking-tight leading-none uppercase" style={{ fontSize: 'var(--dashboard-title-size, 16px)' }}>
                  {theme.dashboardTitle}
                </h1>
@@ -153,6 +185,13 @@ export default function App() {
                  <span className="text-[9px] font-black uppercase text-brand-blue">{selectedBranch?.name}</span>
                  <ChevronRight className="w-2.5 h-2.5 text-text-muted" />
                  <span className="text-[9px] font-black uppercase text-text-muted capitalize">{activeTab}</span>
+               </div>
+             </div>
+             <div className="hidden md:flex flex-col">
+               <div className="flex items-center gap-1">
+                 <span className="text-[10px] font-black uppercase text-brand-blue">{selectedBranch?.name}</span>
+                 <ChevronRight className="w-2.5 h-2.5 text-text-muted" />
+                 <span className="text-[10px] font-black uppercase text-text-muted capitalize tracking-widest italic">{activeTab}</span>
                </div>
              </div>
           </div>

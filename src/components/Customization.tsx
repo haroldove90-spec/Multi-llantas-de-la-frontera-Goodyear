@@ -10,6 +10,9 @@ interface ThemeConfig {
   textMain: string;
   textMuted: string;
   logoSize: number;
+  logoSizeTablet: number;
+  logoSizeMobile: number;
+  logoSizeHome: number;
   dashboardTitle: string;
   dashboardTitleFontSize: number;
   showLogoContainer: boolean;
@@ -22,10 +25,13 @@ const DEFAULT_THEME: ThemeConfig = {
   brandBlue: '#1D66C4',
   textMain: '#FFFFFF',
   textMuted: '#D1D1D1',
-  logoSize: 48,
+  logoSize: 32,
+  logoSizeTablet: 28,
+  logoSizeMobile: 24,
+  logoSizeHome: 100,
   dashboardTitle: 'Multillantas de la Frontera',
   dashboardTitleFontSize: 16,
-  showLogoContainer: true,
+  showLogoContainer: false,
 };
 
 export default function Customization() {
@@ -53,6 +59,9 @@ export default function Customization() {
     root.style.setProperty('--color-text-muted', theme.textMuted || DEFAULT_THEME.textMuted);
     
     root.style.setProperty('--logo-size', `${theme.logoSize || DEFAULT_THEME.logoSize}px`);
+    root.style.setProperty('--logo-size-tablet', `${theme.logoSizeTablet || DEFAULT_THEME.logoSizeTablet}px`);
+    root.style.setProperty('--logo-size-mobile', `${theme.logoSizeMobile || DEFAULT_THEME.logoSizeMobile}px`);
+    root.style.setProperty('--logo-size-home', `${theme.logoSizeHome || DEFAULT_THEME.logoSizeHome}px`);
     root.style.setProperty('--dashboard-title-size', `${theme.dashboardTitleFontSize || DEFAULT_THEME.dashboardTitleFontSize}px`);
     root.style.setProperty('--display-logo-container', theme.showLogoContainer ? 'flex' : 'none');
     root.style.setProperty('--dashboard-title-text', `"${theme.dashboardTitle || DEFAULT_THEME.dashboardTitle}"`); 
@@ -127,30 +136,61 @@ export default function Customization() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Logo Size */}
-                <div className="bg-card-bg p-6 rounded-3xl border border-white/5 shadow-xl">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Tamaño Logo ({theme.logoSize || 0}px)</p>
-                  <input 
-                    type="range"
-                    min="20"
-                    max="150"
-                    value={theme.logoSize || 20}
-                    onChange={(e) => setTheme({ ...theme, logoSize: parseInt(e.target.value) })}
-                    className="w-full accent-brand-red"
-                  />
+                {/* Logo Sizes */}
+                <div className="bg-card-bg p-6 rounded-3xl border border-white/5 shadow-xl space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">Tamaño Logo Dashboard</p>
+                  
+                  <div>
+                    <p className="text-[9px] font-bold text-text-muted/40 uppercase mb-1">Fullscreen ({theme.logoSize}px)</p>
+                    <input 
+                      type="range" min="10" max="100" value={theme.logoSize}
+                      onChange={(e) => setTheme({ ...theme, logoSize: parseInt(e.target.value) })}
+                      className="w-full accent-brand-red h-1.5"
+                    />
+                  </div>
+                  
+                  <div>
+                    <p className="text-[9px] font-bold text-text-muted/40 uppercase mb-1">Tablet ({theme.logoSizeTablet}px)</p>
+                    <input 
+                      type="range" min="10" max="80" value={theme.logoSizeTablet}
+                      onChange={(e) => setTheme({ ...theme, logoSizeTablet: parseInt(e.target.value) })}
+                      className="w-full accent-brand-blue h-1.5"
+                    />
+                  </div>
+                  
+                  <div>
+                    <p className="text-[9px] font-bold text-text-muted/40 uppercase mb-1">Mobil ({theme.logoSizeMobile}px)</p>
+                    <input 
+                      type="range" min="10" max="60" value={theme.logoSizeMobile}
+                      onChange={(e) => setTheme({ ...theme, logoSizeMobile: parseInt(e.target.value) })}
+                      className="w-full accent-brand-red h-1.5"
+                    />
+                  </div>
                 </div>
-                
-                {/* Title Size */}
-                <div className="bg-card-bg p-6 rounded-3xl border border-white/5 shadow-xl">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Tamaño Título ({theme.dashboardTitleFontSize || 0}px)</p>
-                  <input 
-                    type="range"
-                    min="8"
-                    max="40"
-                    value={theme.dashboardTitleFontSize || 8}
-                    onChange={(e) => setTheme({ ...theme, dashboardTitleFontSize: parseInt(e.target.value) })}
-                    className="w-full accent-brand-blue"
-                  />
+
+                <div className="space-y-6">
+                  {/* Home Logo Size */}
+                  <div className="bg-card-bg p-6 rounded-3xl border border-white/5 shadow-xl">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Tamaño Logo Home ({theme.logoSizeHome}px)</p>
+                    <input 
+                      type="range" min="40" max="400" value={theme.logoSizeHome}
+                      onChange={(e) => setTheme({ ...theme, logoSizeHome: parseInt(e.target.value) })}
+                      className="w-full accent-brand-blue"
+                    />
+                  </div>
+                  
+                  {/* Title Size */}
+                  <div className="bg-card-bg p-6 rounded-3xl border border-white/5 shadow-xl">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Tamaño Título ({theme.dashboardTitleFontSize || 0}px)</p>
+                    <input 
+                      type="range"
+                      min="8"
+                      max="40"
+                      value={theme.dashboardTitleFontSize || 8}
+                      onChange={(e) => setTheme({ ...theme, dashboardTitleFontSize: parseInt(e.target.value) })}
+                      className="w-full accent-brand-red"
+                    />
+                  </div>
                 </div>
               </div>
 

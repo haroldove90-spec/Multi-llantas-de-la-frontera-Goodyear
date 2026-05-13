@@ -37,7 +37,14 @@ export const navItems = [
 export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onClose }: SidebarProps) {
   const filteredNavItems = navItems.filter(item => userRole && item.roles.includes(userRole));
   const [theme, setTheme] = React.useState<any>(() => {
-    const defaultData = { dashboardTitle: 'Multillantas de la Frontera', showLogoContainer: true };
+    const defaultData = { 
+      dashboardTitle: 'Multillantas de la Frontera', 
+      logoSize: 32,
+      logoSizeTablet: 28,
+      logoSizeMobile: 24,
+      logoSizeHome: 100,
+      showLogoContainer: false 
+    };
     const saved = localStorage.getItem('erp_theme');
     if (saved) {
       try {
@@ -105,26 +112,41 @@ export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onC
           <div className="flex items-center gap-3">
           {theme.showLogoContainer ? (
             <div 
-              className="bg-brand-red rounded flex items-center justify-center overflow-hidden shrink-0" 
+              className="bg-brand-red rounded-lg flex items-center justify-center overflow-hidden shrink-0" 
               style={{ 
-                width: 'var(--logo-size, 48px)',
-                height: 'var(--logo-size, 48px)'
+                width: 'var(--logo-size, 32px)',
+                height: 'var(--logo-size, 32px)'
               }}
             >
-              <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" className="w-[85%]" />
+              <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" className="w-[85%] h-[85%] object-contain" />
             </div>
           ) : (
-            <img 
-              src="https://appdesign.appdesignproyectos.com/multillantas.png" 
-              alt="Logo" 
-              style={{ 
-                width: 'var(--logo-size, 48px)'
-              }}
-              className="object-contain shrink-0" 
-            />
+            <div className="flex items-center">
+              {/* Mobile Size */}
+              <img 
+                src="https://appdesign.appdesignproyectos.com/multillantas.png" 
+                alt="Logo" 
+                style={{ width: 'var(--logo-size-mobile, 24px)' }}
+                className="object-contain shrink-0 md:hidden" 
+              />
+              {/* Tablet Size */}
+              <img 
+                src="https://appdesign.appdesignproyectos.com/multillantas.png" 
+                alt="Logo" 
+                style={{ width: 'var(--logo-size-tablet, 28px)' }}
+                className="object-contain shrink-0 hidden md:block lg:hidden" 
+              />
+              {/* Desktop Size */}
+              <img 
+                src="https://appdesign.appdesignproyectos.com/multillantas.png" 
+                alt="Logo" 
+                style={{ width: 'var(--logo-size, 32px)' }}
+                className="object-contain shrink-0 hidden lg:block" 
+              />
+            </div>
           )}
           <span 
-            className="font-black tracking-tighter text-white uppercase leading-none"
+            className="font-black tracking-tighter text-white uppercase leading-none md:hidden"
             style={{ fontSize: 'calc(var(--dashboard-title-size, 16px) * 0.8)' }}
           >
             {theme.dashboardTitle}
