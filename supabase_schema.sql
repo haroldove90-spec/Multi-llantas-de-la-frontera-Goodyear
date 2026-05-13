@@ -98,6 +98,13 @@ CREATE TABLE warranties (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 9. App Config (Global settings like theme)
+CREATE TABLE app_config (
+  id TEXT PRIMARY KEY DEFAULT 'global',
+  theme JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Enable Row Level Security (RLS) on all tables
 ALTER TABLE branches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tires ENABLE ROW LEVEL SECURITY;
@@ -107,6 +114,7 @@ ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sale_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transfers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE warranties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
 
 -- Basic Public Read Policies (for demo purposes, restrict later)
 CREATE POLICY "Public Read" ON branches FOR SELECT USING (true);
@@ -117,3 +125,5 @@ CREATE POLICY "Public Read" ON sales FOR SELECT USING (true);
 CREATE POLICY "Public Read" ON sale_items FOR SELECT USING (true);
 CREATE POLICY "Public Read" ON transfers FOR SELECT USING (true);
 CREATE POLICY "Public Read" ON warranties FOR SELECT USING (true);
+CREATE POLICY "Public Read" ON app_config FOR SELECT USING (true);
+CREATE POLICY "Public Write" ON app_config FOR ALL USING (true);

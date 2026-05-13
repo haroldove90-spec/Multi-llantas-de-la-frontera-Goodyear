@@ -23,6 +23,16 @@ interface NotificationsProps {
 }
 
 export default function Notifications({ isOpen, onClose }: NotificationsProps) {
+  const [notifications, setNotifications] = React.useState<Notification[]>(MOCK_NOTIFICATIONS);
+
+  const clearAll = () => {
+    setNotifications([]);
+  };
+
+  const removeOne = (id: string) => {
+    setNotifications(notifications.filter(n => n.id !== id));
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -56,39 +66,59 @@ export default function Notifications({ isOpen, onClose }: NotificationsProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {MOCK_NOTIFICATIONS.map((notif) => (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              key={notif.id}
-              className="p-5 bg-interface-bg/50 rounded-[2rem] border border-white/5 hover:border-brand-red/30 transition-all group"
-            >
-              <div className="flex gap-4">
-                <div className={`mt-1 shrink-0 ${
-                  notif.type === 'alert' ? 'text-brand-red' :
-                  notif.type === 'success' ? 'text-emerald-500' :
-                  notif.type === 'warning' ? 'text-orange-500' : 'text-brand-blue'
-                }`}>
-                  {notif.type === 'alert' && <AlertTriangle className="w-5 h-5" />}
-                  {notif.type === 'success' && <CheckCircle className="w-5 h-5" />}
-                  {notif.type === 'warning' && <Clock className="w-5 h-5" />}
-                  {notif.type === 'info' && <Info className="w-5 h-5" />}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className="text-xs font-black uppercase tracking-tight text-white">{notif.title}</h4>
-                    <span className="text-[9px] font-bold text-text-muted uppercase">{notif.time}</span>
+          {notifications.length > 0 ? (
+            notifications.map((notif) => (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                key={notif.id}
+                className="p-5 bg-interface-bg/50 rounded-3xl border border-white/5 hover:border-brand-red/30 transition-all group relative overflow-hidden"
+              >
+                <div className="flex gap-4">
+                  <div className={`mt-1 shrink-0 ${
+                    notif.type === 'alert' ? 'text-brand-red' :
+                    notif.type === 'success' ? 'text-emerald-500' :
+                    notif.type === 'warning' ? 'text-orange-500' : 'text-brand-blue'
+                  }`}>
+                    {notif.type === 'alert' && <AlertTriangle className="w-5 h-5" />}
+                    {notif.type === 'success' && <CheckCircle className="w-5 h-5" />}
+                    {notif.type === 'warning' && <Clock className="w-5 h-5" />}
+                    {notif.type === 'info' && <Info className="w-5 h-5" />}
                   </div>
-                  <p className="text-[11px] text-text-muted leading-relaxed">{notif.message}</p>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="text-xs font-black uppercase tracking-tight text-white">{notif.title}</h4>
+                      <span className="text-[9px] font-bold text-text-muted uppercase">{notif.time}</span>
+                    </div>
+                    <p className="text-[11px] text-text-muted leading-relaxed mb-3">{notif.message}</p>
+                    <button 
+                      onClick={() => removeOne(notif.id)}
+                      className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-red opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      Descartar
+                    </button>
+                  </div>
                 </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-center p-8">
+              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-white/20" />
               </div>
-            </motion.div>
-          ))}
+              <p className="text-text-muted font-bold uppercase tracking-widest text-xs italic">No hay alertas pendientes</p>
+            </div>
+          )}
         </div>
 
         <div className="p-6 border-t border-white/5 bg-interface-bg/30">
-          <button className="w-full bg-brand-red p-4 rounded-2xl text-white font-black uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-brand-red/20">
-            Marcar todas como leídas
+          <button 
+            onClick={clearAll}
+            disabled={notifications.length === 0}
+            className="w-full bg-brand-red p-4 rounded-2xl text-white font-black uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-brand-red/20 disabled:opacity-50 disabled:grayscale"
+          >
+            Limpiar todas las alertas
           </button>
         </div>
       </motion.div>

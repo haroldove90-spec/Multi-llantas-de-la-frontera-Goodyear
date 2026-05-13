@@ -61,35 +61,35 @@ export default function BranchSelector({ onSelect }: BranchSelectorProps) {
                className="object-contain" 
              />
           </motion.div>
-          <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 uppercase">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter mb-4 uppercase px-4 max-w-4xl mx-auto leading-[0.9]">
             {(theme.dashboardTitle || 'Multillantas de la Frontera').split(' ')[0]} <span className="text-brand-red">{(theme.dashboardTitle || 'Multillantas de la Frontera').split(' ').slice(1).join(' ')}</span>
           </h1>
-          <p className="text-text-muted font-bold text-lg uppercase tracking-[0.3em]">Seleccione Sucursal de Operación</p>
+          <p className="text-text-muted font-bold text-xs sm:text-sm uppercase tracking-[0.2em] sm:tracking-[0.3em] px-4 italic">Seleccione Sucursal de Operación</p>
         </div>
 
         {/* Home: Branch Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 max-w-6xl mx-auto">
           {BRANCHES.map((branch, idx) => {
             const summary = BRANCH_SUMMARIES.find(s => s.branchId === branch.id);
             return (
               <motion.div
                 key={branch.id}
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: idx * 0.1 }}
                 className="group cursor-pointer"
               >
-                <div className="bg-card-bg border-4 border-transparent hover:border-brand-red rounded-[3rem] p-10 shadow-black/50 shadow-2xl transition-all duration-500 flex flex-col h-full relative overflow-hidden">
+                <div className="bg-card-bg border-4 border-transparent hover:border-brand-red rounded-[2.5rem] p-8 sm:p-10 shadow-black/50 shadow-2xl transition-all duration-500 flex flex-col h-full relative overflow-hidden">
                   {/* Decorative Background Icon */}
-                  <Store className="absolute -right-10 -bottom-10 w-64 h-64 text-white/5 group-hover:text-brand-red/10 transition-colors" />
+                  <Store className="absolute -right-10 -bottom-10 w-48 h-48 sm:w-64 sm:h-64 text-white/5 group-hover:text-brand-red/10 transition-colors" />
 
                   <div className="relative z-10">
-                    <div className="w-20 h-20 bg-interface-bg rounded-3xl flex items-center justify-center text-brand-blue mb-8 border border-white/5 shadow-2xl shadow-black/50">
-                      <Store className="w-10 h-10" />
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-interface-bg rounded-2xl flex items-center justify-center text-brand-blue mb-8 border border-white/5 shadow-2xl shadow-black/50 transition-transform duration-500 group-hover:scale-110">
+                      <Store className="w-8 h-8 sm:w-10 sm:h-10" />
                     </div>
                     
-                    <h3 className="text-4xl font-black uppercase tracking-tighter leading-none mb-3 group-hover:text-brand-red transition-colors text-white">{branch.name}</h3>
-                    <p className="text-text-muted text-xs font-bold uppercase tracking-widest mb-10">{branch.location}</p>
+                    <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tighter leading-none mb-3 group-hover:text-brand-red transition-colors text-white">{branch.name}</h3>
+                    <p className="text-text-muted text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-10">{branch.location}</p>
 
                     <div className="space-y-4 mb-10">
                       <div className="flex items-center justify-between p-4 bg-interface-bg rounded-2xl border border-white/5">

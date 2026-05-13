@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar, { navItems } from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Inventory from './components/Inventory';
@@ -10,66 +10,110 @@ import Branches from './components/Branches';
 import Customization from './components/Customization';
 import BranchSelector from './components/BranchSelector';
 import Notifications from './components/Notifications';
+import Help from './components/Help';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight, Menu } from 'lucide-react';
 import { BRANCHES, UserRole } from './data/mockData';
+import { supabase } from './lib/supabase';
+
+const DEFAULT_THEME = { 
+  dashboardTitle: 'Multillantas de la Frontera', 
+  dashboardSubtitle: 'Sistema de Gestión Integral',
+  logoSize: 32,
+  logoSizeTablet: 28,
+  logoSizeMobile: 24,
+  logoSizeHome: 100,
+  showLogoContainer: false,
+  dashboardTitleFontSize: 16,
+  dashboardSubtitleFontSize: 10,
+  primaryBg: '#000000',
+  cardBg: '#0a0a0a',
+  brandRed: '#ff0000',
+  brandBlue: '#0066ff',
+  textMuted: '#d1d1d1'
+};
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('erp_active_tab') || 'dashboard');
+  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(() => localStorage.getItem('erp_selected_branch'));
+  const [userRole, setUserRole] = useState<UserRole | null>(() => localStorage.getItem('erp_user_role') as UserRole || null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [theme, setTheme] = useState<any>(() => {
-    const defaultData = { 
-      dashboardTitle: 'Multillantas de la Frontera', 
-      logoSize: 32,
-      logoSizeTablet: 28,
-      logoSizeMobile: 24,
-      logoSizeHome: 100,
-      showLogoContainer: false 
-    };
     const saved = localStorage.getItem('erp_theme');
     if (saved) {
       try {
-        return { ...defaultData, ...JSON.parse(saved) };
+        return { ...DEFAULT_THEME, ...JSON.parse(saved) };
       } catch (e) {
-        return defaultData;
+        return DEFAULT_THEME;
       }
     }
-    return defaultData;
+    return DEFAULT_THEME;
   });
 
-  // Apply saved theme on mount
-  React.useEffect(() => {
-    const applyTheme = (themeData: any) => {
-      const root = document.documentElement;
-      root.style.setProperty('--color-interface-bg', themeData.primaryBg);
-      root.style.setProperty('--color-card-bg', themeData.cardBg);
-      root.style.setProperty('--color-brand-red', themeData.brandRed);
-      root.style.setProperty('--color-brand-blue', themeData.brandBlue);
-      root.style.setProperty('--color-text-muted', themeData.textMuted);
-      root.style.setProperty('--logo-size', `${themeData.logoSize}px`);
-      root.style.setProperty('--logo-size-tablet', `${themeData.logoSizeTablet}px`);
-      root.style.setProperty('--logo-size-mobile', `${themeData.logoSizeMobile}px`);
-      root.style.setProperty('--logo-size-home', `${themeData.logoSizeHome}px`);
-      root.style.setProperty('--dashboard-title-size', `${themeData.dashboardTitleFontSize}px`);
-      root.style.setProperty('--dashboard-subtitle-size', `${themeData.dashboardSubtitleFontSize}px`);
-      root.style.setProperty('--display-logo-container', themeData.showLogoContainer ? 'flex' : 'none');
-      setTheme(themeData);
+  const applyTheme = (themeData: any) => {
+    if (!themeData) return;
+    const root = document.documentElement;
+    root.style.setProperty('--color-interface-bg', themeData.primaryBg || DEFAULT_THEME.primaryBg);
+    root.style.setProperty('--color-card-bg', themeData.cardBg || DEFAULT_THEME.cardBg);
+    root.style.setProperty('--color-brand-red', themeData.brandRed || DEFAULT_THEME.brandRed);
+    root.style.setProperty('--color-brand-blue', themeData.brandBlue || DEFAULT_THEME.brandBlue);
+    root.style.setProperty('--color-text-muted', themeData.textMuted || DEFAULT_THEME.textMuted);
+    root.style.setProperty('--logo-size', `${themeData.logoSize || DEFAULT_THEME.logoSize}px`);
+    root.style.setProperty('--logo-size-tablet', `${themeData.logoSizeTablet || DEFAULT_THEME.logoSizeTablet}px`);
+    root.style.setProperty('--logo-size-mobile', `${themeData.logoSizeMobile || DEFAULT_THEME.logoSizeMobile}px`);
+    root.style.setProperty('--logo-size-home', `${themeData.logoSizeHome || DEFAULT_THEME.logoSizeHome}px`);
+    root.style.setProperty('--dashboard-title-size', `${themeData.dashboardTitleFontSize || DEFAULT_THEME.dashboardTitleFontSize}px`);
+    root.style.setProperty('--dashboard-subtitle-size', `${themeData.dashboardSubtitleFontSize || DEFAULT_THEME.dashboardSubtitleFontSize}px`);
+    root.style.setProperty('--display-logo-container', (themeData.showLogoContainer ?? DEFAULT_THEME.showLogoContainer) ? 'flex' : 'none');
+    setTheme(themeData);
+    localStorage.setItem('erp_theme', JSON.stringify(themeData));
+  };
+
+  // Sync with Supabase
+  useEffect(() => {
+    const fetchConfig = async () => {
+      const { data, error } = await supabase
+        .from('app_config')
+        .select('theme')
+        .eq('id', 'global')
+        .single();
+      
+      if (data && data.theme) {
+        applyTheme(data.theme);
+      } else if (error && error.code === 'PGRST116') {
+        // Table exists but record doesn't, initialize it
+        await supabase.from('app_config').upsert({ id: 'global', theme: theme });
+      }
     };
 
-    const saved = localStorage.getItem('erp_theme');
-    if (saved) {
-      applyTheme(JSON.parse(saved));
-    }
+    fetchConfig();
+
+    // Subscribe to changes
+    const channel = supabase
+      .channel('app_config_changes')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'app_config',
+        filter: 'id=eq.global'
+      }, (payload) => {
+        if (payload.new && payload.new.theme) {
+          applyTheme(payload.new.theme);
+        }
+      })
+      .subscribe();
 
     const handleThemeUpdate = (e: any) => {
       applyTheme(e.detail);
     };
 
     window.addEventListener('theme-update', handleThemeUpdate);
-    return () => window.removeEventListener('theme-update', handleThemeUpdate);
+    
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener('theme-update', handleThemeUpdate);
+    };
   }, []);
 
   const selectedBranch = selectedBranchId === 'all' 
@@ -79,16 +123,28 @@ export default function App() {
   const handleBranchSelect = (branchId: string, role: UserRole) => {
     setSelectedBranchId(branchId);
     setUserRole(role);
+    localStorage.setItem('erp_selected_branch', branchId);
+    localStorage.setItem('erp_user_role', role);
+    
+    let initialTab = 'dashboard';
     if (role === 'vendedor' || role === 'contador') {
-      setActiveTab(role === 'vendedor' ? 'sales' : 'fiscal');
-    } else {
-      setActiveTab('dashboard');
+      initialTab = role === 'vendedor' ? 'sales' : 'fiscal';
     }
+    setActiveTab(initialTab);
+    localStorage.setItem('erp_active_tab', initialTab);
   };
 
   const handleLogout = () => {
     setSelectedBranchId(null);
     setUserRole(null);
+    localStorage.removeItem('erp_selected_branch');
+    localStorage.removeItem('erp_user_role');
+    localStorage.removeItem('erp_active_tab');
+  };
+
+  const handleUpdateTab = (tab: string) => {
+    setActiveTab(tab);
+    localStorage.setItem('erp_active_tab', tab);
   };
 
   if (!selectedBranchId) {
@@ -113,6 +169,8 @@ export default function App() {
         return <Customization />;
       case 'branches':
         return <Branches userRole={userRole} branchId={selectedBranchId} />;
+      case 'help':
+        return <Help userRole={userRole} />;
       default:
         return <Dashboard userRole={userRole} />;
     }
@@ -123,12 +181,13 @@ export default function App() {
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={(tab) => {
-          setActiveTab(tab);
+          handleUpdateTab(tab);
           setIsSidebarOpen(false);
         }} 
         userRole={userRole} 
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        onLogout={handleLogout}
       />
       
       <main className="flex-1 md:ml-64 flex flex-col h-screen min-w-0">

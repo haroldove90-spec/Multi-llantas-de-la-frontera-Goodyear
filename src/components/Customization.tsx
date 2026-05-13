@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Palette, RotateCcw, Save, Check } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface ThemeConfig {
   primaryBg: string;
@@ -55,6 +56,15 @@ export default function Customization() {
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
+    const handleThemeUpdate = (e: any) => {
+      setTheme(e.detail);
+    };
+
+    window.addEventListener('theme-update', handleThemeUpdate);
+    return () => window.removeEventListener('theme-update', handleThemeUpdate);
+  }, []);
+
+  useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--color-interface-bg', theme.primaryBg || DEFAULT_THEME.primaryBg);
     root.style.setProperty('--color-card-bg', theme.cardBg || DEFAULT_THEME.cardBg);
@@ -75,10 +85,21 @@ export default function Customization() {
     window.dispatchEvent(new CustomEvent('theme-update', { detail: theme }));
   }, [theme]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     localStorage.setItem('erp_theme', JSON.stringify(theme));
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
+    
+    // Global synchronization via Supabase
+    try {
+      await supabase
+        .from('app_config')
+        .upsert({ id: 'global', theme: theme });
+      
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+    } catch (error) {
+      console.error('Error saving global theme:', error);
+      alert('Error al sincronizar globalmente. Verifique su base de datos.');
+    }
   };
 
   const handleReset = () => {
@@ -308,6 +329,30 @@ export default function Customization() {
               </div>
             </div>
           </div>
+
+          <section className="bg-card-bg rounded-[2rem] border border-white/5 p-8 shadow-2xl mt-6">
+            <h3 className="text-sm font-black uppercase tracking-[0.3em] text-white/40 mb-6 border-b border-white/5 pb-2 flex items-center gap-2">
+              Matriz de Permisos
+            </h3>
+            <div className="space-y-4">
+              {[
+                { role: 'Administrador', modules: 'Todos los módulos' },
+                { role: 'Técnico / Asesor', modules: 'Inventario, Traspasos, Garantías' },
+                { role: 'Vendedor', modules: 'PV, Inventario, Reportes' },
+                { role: 'Contador', modules: 'Fiscal, Ventas, Sucursales' }
+              ].map((r, i) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-interface-bg/50 rounded-2xl border border-white/5">
+                  <div>
+                    <p className="text-xs font-black text-white uppercase tracking-tight">{r.role}</p>
+                    <p className="text-[9px] text-text-muted uppercase font-bold opacity-60 mt-1 italic">{r.modules}</p>
+                  </div>
+                  <div className="w-5 h-5 bg-brand-red/20 rounded-full flex items-center justify-center">
+                    <Check className="w-3 h-3 text-brand-red" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
     </div>

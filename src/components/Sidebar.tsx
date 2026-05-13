@@ -11,7 +11,8 @@ import {
   HelpCircle,
   FileText,
   Palette,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 import { UserRole } from '../data/mockData';
 
@@ -21,6 +22,7 @@ interface SidebarProps {
   userRole: UserRole | null;
   isOpen?: boolean;
   onClose?: () => void;
+  onLogout?: () => void;
 }
 
 export const navItems = [
@@ -30,11 +32,12 @@ export const navItems = [
   { id: 'transfers', label: 'Traspasos', icon: Truck, roles: ['superadmin', 'gerente'] },
   { id: 'warranties', label: 'Garantías', icon: ShieldCheck, roles: ['superadmin', 'gerente'] },
   { id: 'fiscal', label: 'Centro Fiscal', icon: FileText, roles: ['superadmin', 'contador'] },
-  { id: 'customization', label: 'Personalización', icon: Palette, roles: ['superadmin'] },
   { id: 'branches', label: 'Sucursales', icon: Store, roles: ['superadmin'] },
+  { id: 'customization', label: 'Configuración', icon: Settings, roles: ['superadmin'] },
+  { id: 'help', label: 'Ayuda', icon: HelpCircle, roles: ['superadmin', 'gerente', 'contador', 'vendedor'] },
 ];
 
-export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onClose, onLogout }: SidebarProps) {
   const filteredNavItems = navItems.filter(item => userRole && item.roles.includes(userRole));
   const [theme, setTheme] = React.useState<any>(() => {
     const defaultData = { 
@@ -134,7 +137,7 @@ export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onC
         )}
       </div>
 
-      <nav className="flex-1 mt-8 px-4 space-y-1">
+      <nav className="flex-1 mt-8 px-4 space-y-1 overflow-y-auto scrollbar-hide">
         {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -161,15 +164,15 @@ export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onC
         })}
       </nav>
 
-      <div className="mt-auto">
+      <div className="mt-auto shrink-0">
         <div className="p-4 border-t border-interface-bg space-y-1 bg-interface-bg/10">
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-text-muted hover:text-white hover:bg-interface-bg rounded-xl transition-all text-xs font-black uppercase tracking-wider">
-            <Settings className="w-4 h-4" />
-            <span>Configuración</span>
-          </button>
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-text-muted hover:text-white hover:bg-interface-bg rounded-xl transition-all text-xs font-black uppercase tracking-wider">
-            <HelpCircle className="w-4 h-4" />
-            <span>Ayuda</span>
+          {/* Mobile Logout */}
+          <button 
+            onClick={onLogout}
+            className="w-full flex items-center gap-3 px-3 py-2 text-brand-red hover:bg-brand-red/10 rounded-xl transition-all text-xs font-black uppercase tracking-wider md:hidden"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Cerrar Sesión</span>
           </button>
         </div>
 
