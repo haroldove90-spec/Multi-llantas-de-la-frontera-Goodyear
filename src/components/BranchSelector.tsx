@@ -1,5 +1,5 @@
 import React from 'react';
-import { BRANCHES, BRANCH_SUMMARIES, USERS, UserRole } from '../data/mockData';
+import { BRANCHES, BRANCH_SUMMARIES, UserRole } from '../data/mockData';
 import { motion } from 'motion/react';
 import { Store, TrendingUp, AlertTriangle, ChevronRight, ShieldCheck, UserCog, Calculator, ShoppingBag } from 'lucide-react';
 
@@ -9,115 +9,78 @@ interface BranchSelectorProps {
 
 export default function BranchSelector({ onSelect }: BranchSelectorProps) {
   const roles: { id: UserRole; label: string; icon: any; color: string; desc: string }[] = [
-    { id: 'superadmin', label: 'SuperAdmin', icon: ShieldCheck, color: 'bg-purple-600', desc: 'Acceso Total Multi-sucursal' },
-    { id: 'gerente', label: 'Gerente', icon: UserCog, color: 'bg-blue-600', desc: 'Control de Sede y Traspasos' },
-    { id: 'contador', label: 'Contador', icon: Calculator, color: 'bg-emerald-600', desc: 'Solo Lectura y Reportes Fiscales' },
-    { id: 'vendedor', label: 'Vendedor', icon: ShoppingBag, color: 'bg-orange-600', desc: 'Ventas y Existencias' },
+    { id: 'superadmin', label: 'Administrador', icon: ShieldCheck, color: 'bg-brand-red', desc: 'Control Total y Auditoría' },
+    { id: 'gerente', label: 'Técnico / Asesor', icon: UserCog, color: 'bg-brand-blue', desc: 'Gestión Técnica e Inventario' },
+    { id: 'contador', label: 'Contador', icon: Calculator, color: 'bg-emerald-600', desc: 'Reportes y Centro Fiscal' },
+    { id: 'vendedor', label: 'Vendedor', icon: ShoppingBag, color: 'bg-orange-500', desc: 'Punto de Venta y Cotización' },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 md:p-8 overflow-y-auto">
+    <div className="min-h-screen bg-interface-bg text-white flex flex-col items-center justify-center p-4 md:p-8 overflow-y-auto">
       <div className="max-w-7xl w-full py-12">
         {/* Header */}
         <div className="text-center mb-16">
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="inline-flex p-4 bg-blue-600 rounded-3xl mb-6 shadow-2xl shadow-blue-500/40"
+            className="flex justify-center mb-6"
           >
-            <Store className="w-10 h-10" />
+             <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" className="w-48 md:w-64 object-contain" />
           </motion.div>
-          <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-4">TyreTrack <span className="text-blue-500">ERP</span></h1>
-          <p className="text-slate-400 font-bold text-lg uppercase tracking-widest">Portal de Acceso Multi-sucursal</p>
+          <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 uppercase">Portal <span className="text-brand-red">Multillantas</span></h1>
+          <p className="text-text-muted font-bold text-lg uppercase tracking-[0.3em]">Seleccione Sucursal de Operación</p>
         </div>
 
-        {/* Global Access for SuperAdmin */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md mx-auto mb-12"
-        >
-          <button 
-            onClick={() => onSelect('all', 'superadmin')}
-            className="w-full bg-purple-600/10 hover:bg-purple-600/20 border border-purple-500/30 p-6 rounded-[2rem] flex items-center justify-between group transition-all"
-          >
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-14 bg-purple-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-purple-600/20 group-hover:scale-110 transition-transform">
-                <ShieldCheck className="w-8 h-8" />
-              </div>
-              <div className="text-left">
-                <h3 className="text-xl font-black text-purple-400 uppercase tracking-tighter">Vista Global Corporativa</h3>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Consolida 3 Sucursales (Sólo Dueño)</p>
-              </div>
-            </div>
-            <ChevronRight className="w-6 h-6 text-purple-500 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </motion.div>
-
-        {/* Grid de Sucursales */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+        {/* Home: Branch Selection */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {BRANCHES.map((branch, idx) => {
             const summary = BRANCH_SUMMARIES.find(s => s.branchId === branch.id);
             return (
               <motion.div
                 key={branch.id}
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.1 }}
-                className="bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-[2.5rem] p-1 shadow-2xl hover:border-slate-700 transition-all duration-500"
+                className="group cursor-pointer"
               >
-                <div className="p-8">
-                  {/* Branch Identity */}
-                  <div className="flex items-center gap-4 mb-10">
-                    <div className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center text-blue-400 border border-slate-700 shadow-inner">
-                      <Store className="w-7 h-7" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black tracking-tight">{branch.name}</h3>
-                      <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">{branch.location}</p>
-                    </div>
-                  </div>
+                <div className="bg-card-bg border-4 border-transparent hover:border-brand-red rounded-[3rem] p-10 shadow-black/50 shadow-2xl transition-all duration-500 flex flex-col h-full relative overflow-hidden">
+                  {/* Decorative Background Icon */}
+                  <Store className="absolute -right-10 -bottom-10 w-64 h-64 text-white/5 group-hover:text-brand-red/10 transition-colors" />
 
-                  {/* Operational Stats (Only for context, shown to all for this selector) */}
-                  <div className="grid grid-cols-2 gap-4 mb-10">
-                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-white/5">
-                      <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Ventas</span>
-                      </div>
-                      <p className="text-sm font-black text-emerald-400">${summary?.dailySales.toLocaleString()}</p>
+                  <div className="relative z-10">
+                    <div className="w-20 h-20 bg-interface-bg rounded-3xl flex items-center justify-center text-brand-blue mb-8 border border-white/5 shadow-2xl shadow-black/50">
+                      <Store className="w-10 h-10" />
                     </div>
-                    <div className="bg-slate-800/50 p-4 rounded-2xl border border-white/5">
-                      <div className="flex items-center gap-2 mb-2 text-amber-500">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Stock Crítico</span>
-                      </div>
-                      <p className="text-sm font-black text-amber-400">{summary?.lowStockCount} SKUs</p>
-                    </div>
-                  </div>
+                    
+                    <h3 className="text-4xl font-black uppercase tracking-tighter leading-none mb-3 group-hover:text-brand-red transition-colors text-white">{branch.name}</h3>
+                    <p className="text-text-muted text-xs font-bold uppercase tracking-widest mb-10">{branch.location}</p>
 
-                  {/* Acceso por Roles */}
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 text-center">Seleccione su Rol de Acceso</p>
-                    {roles.map((role) => (
-                      <button 
-                        key={role.id}
-                        onClick={() => onSelect(branch.id, role.id)}
-                        className="w-full group/btn relative overflow-hidden bg-slate-800 hover:bg-slate-700 p-4 rounded-2xl transition-all duration-300 flex items-center gap-4 text-left border border-white/5 active:scale-[0.98]"
-                      >
-                        <div className={`p-2 rounded-xl ${role.color} text-white shadow-lg shadow-black/20 group-hover/btn:scale-110 transition-transform`}>
-                          <role.icon className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-xs font-black uppercase tracking-widest leading-none mb-1">{role.label}</p>
-                          <p className="text-[9px] text-slate-500 font-bold uppercase">{role.desc}</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-slate-600 group-hover/btn:text-white transition-colors" />
-                        
-                        {/* Hover Gradient Effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
-                      </button>
-                    ))}
+                    <div className="space-y-4 mb-10">
+                      <div className="flex items-center justify-between p-4 bg-interface-bg rounded-2xl border border-white/5">
+                        <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">Ventas Hoy</span>
+                        <span className="text-lg font-black text-brand-blue">${summary?.dailySales.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-interface-bg rounded-2xl border border-white/5">
+                        <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">Personal</span>
+                        <span className="text-lg font-black text-white">{summary?.employeeCount}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-6 border-t border-white/5">
+                      <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-6 text-center italic">Elegir Perfil de Acceso</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {roles.map((role) => (
+                          <button 
+                            key={role.id}
+                            onClick={() => onSelect(branch.id, role.id)}
+                            className="bg-interface-bg p-4 rounded-2xl border border-white/5 hover:bg-brand-red hover:border-brand-red transition-all group/role text-center overflow-hidden"
+                          >
+                            <role.icon className="w-5 h-5 mx-auto mb-2 text-brand-red group-hover/role:text-white transition-colors" />
+                            <p className="text-[10px] font-black uppercase tracking-tighter group-hover/role:text-white transition-colors text-white">{role.label}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -127,19 +90,19 @@ export default function BranchSelector({ onSelect }: BranchSelectorProps) {
 
         {/* System Info */}
         <div className="flex flex-col items-center gap-6">
-          <div className="flex gap-4 p-1 bg-slate-900 border border-slate-800 rounded-full px-6 py-2">
-            <span className="text-[10px] font-black text-blue-500 uppercase flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-              Server: Cloud-USA-01
+          <div className="flex gap-4 p-1 bg-card-bg border border-interface-bg rounded-full px-6 py-2">
+            <span className="text-[10px] font-black text-brand-blue uppercase flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-brand-blue animate-pulse"></div>
+              Server: Cloud-MX-01
             </span>
-            <span className="text-slate-700">|</span>
+            <span className="text-white/10">|</span>
             <span className="text-[10px] font-black text-emerald-500 uppercase flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-              DB: Read/Write Optimized
+              DB: Goodyear Secure
             </span>
           </div>
-          <p className="text-slate-600 text-[10px] font-black uppercase tracking-[0.3em]">
-            Desarrollado por <span className="text-slate-400">App Design Solutions</span> © 2026
+          <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.3em]">
+            Multillantas de la Frontera <span className="text-white/20">© 2026</span>
           </p>
         </div>
       </div>

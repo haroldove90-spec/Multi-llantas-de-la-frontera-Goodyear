@@ -3,6 +3,11 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-interface-bg: #282829;
+  --color-card-bg: #3B3935;
+  --color-brand-red: #B80F16;
+  --color-brand-blue: #1D66C4;
+  --color-text-muted: #D1D1D1;
 }
 
 @layer base {

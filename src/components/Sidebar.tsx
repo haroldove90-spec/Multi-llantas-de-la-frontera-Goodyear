@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { 
   LayoutDashboard, 
   Package, 
@@ -8,7 +9,8 @@ import {
   Store,
   Settings,
   HelpCircle,
-  FileText
+  FileText,
+  Palette
 } from 'lucide-react';
 import { UserRole } from '../data/mockData';
 
@@ -18,13 +20,14 @@ interface SidebarProps {
   userRole: UserRole | null;
 }
 
-const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['superadmin', 'gerente', 'vendedor'] },
-  { id: 'inventory', label: 'Inventario', icon: Package, roles: ['superadmin', 'gerente', 'contador', 'vendedor'] },
-  { id: 'sales', label: 'Ventas', icon: ShoppingCart, roles: ['superadmin', 'gerente', 'contador', 'vendedor'] },
+export const navItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['superadmin', 'gerente'] },
+  { id: 'inventory', label: 'Inventario', icon: Package, roles: ['superadmin', 'gerente', 'vendedor'] },
+  { id: 'sales', label: 'Punto de Venta', icon: ShoppingCart, roles: ['superadmin', 'contador', 'vendedor'] },
   { id: 'transfers', label: 'Traspasos', icon: Truck, roles: ['superadmin', 'gerente'] },
-  { id: 'warranties', label: 'Garantías', icon: ShieldCheck, roles: ['superadmin', 'gerente', 'vendedor'] },
-  { id: 'fiscal', label: 'Centro Fiscal', icon: FileText, roles: ['superadmin', 'gerente', 'contador'] },
+  { id: 'warranties', label: 'Garantías', icon: ShieldCheck, roles: ['superadmin', 'gerente'] },
+  { id: 'fiscal', label: 'Centro Fiscal', icon: FileText, roles: ['superadmin', 'contador'] },
+  { id: 'customization', label: 'Personalización', icon: Palette, roles: ['superadmin'] },
   { id: 'branches', label: 'Sucursales', icon: Store, roles: ['superadmin'] },
 ];
 
@@ -32,28 +35,35 @@ export default function Sidebar({ activeTab, setActiveTab, userRole }: SidebarPr
   const filteredNavItems = navItems.filter(item => userRole && item.roles.includes(userRole));
 
   const roleColors = {
-    superadmin: 'border-purple-500 text-purple-500',
-    gerente: 'border-blue-500 text-blue-500',
+    superadmin: 'border-brand-red text-brand-red',
+    gerente: 'border-brand-blue text-brand-blue',
     contador: 'border-emerald-500 text-emerald-500',
     vendedor: 'border-orange-500 text-orange-500'
   };
 
+  const roleLabels = {
+    superadmin: 'Administrador',
+    gerente: 'Técnico / Asesor',
+    contador: 'Contador',
+    vendedor: 'Vendedor'
+  };
+
   return (
-    <aside id="sidebar" className="w-64 h-screen bg-slate-900 text-slate-300 flex flex-col fixed left-0 top-0 border-r border-slate-800 shrink-0">
-      <div className="p-6 flex flex-col gap-4 border-b border-slate-800">
+    <aside id="sidebar" className="w-64 h-screen bg-card-bg text-white flex flex-col fixed left-0 top-0 border-r border-white/5 shrink-0 z-40">
+      <div className="p-6 flex flex-col gap-4 border-b border-white/5 bg-interface-bg/30">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-xs">TT</div>
-          <span className="text-xl font-black tracking-tighter text-white uppercase">TyreTrack</span>
+          <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" className="w-12 object-contain" />
+          <span className="text-xs font-black tracking-tighter text-white uppercase leading-tight">Multillantas de la Frontera</span>
         </div>
         {userRole && (
-          <div className={`px-3 py-1.5 rounded-full border bg-slate-800/50 flex items-center justify-center gap-2 ${roleColors[userRole]}`}>
+          <div className={`px-3 py-1.5 rounded-xl border bg-interface-bg flex items-center justify-center gap-2 ${roleColors[userRole]}`}>
             <div className={`w-1.5 h-1.5 rounded-full bg-current shadow-[0_0_8px_currentColor]`}></div>
-            <span className="text-[9px] font-black uppercase tracking-widest">{userRole.replace('_', ' ')}</span>
+            <span className="text-[9px] font-black uppercase tracking-widest">{roleLabels[userRole]}</span>
           </div>
         )}
       </div>
 
-      <nav className="flex-1 mt-6 px-4 space-y-1">
+      <nav className="flex-1 mt-8 px-4 space-y-1">
         {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -61,36 +71,42 @@ export default function Sidebar({ activeTab, setActiveTab, userRole }: SidebarPr
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-300 group relative overflow-hidden ${
                 isActive 
-                  ? 'bg-blue-600/10 text-blue-400 font-medium' 
-                  : 'hover:bg-slate-800 text-slate-400 hover:text-slate-100'
+                  ? 'bg-brand-red text-white font-black shadow-xl shadow-brand-red/20' 
+                  : 'hover:bg-interface-bg/50 text-text-muted hover:text-white'
               }`}
             >
-              <Icon className={`w-5 h-5 ${isActive ? 'text-blue-500' : 'text-slate-500 group-hover:text-slate-300'}`} />
-              <span className="text-sm font-bold">{item.label}</span>
+              <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-text-muted group-hover:text-white'}`} />
+              <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
+              {isActive && (
+                <motion.div 
+                  layoutId="sidebarActive"
+                  className="absolute left-0 w-1 h-6 bg-white rounded-full"
+                />
+              )}
             </button>
           );
         })}
       </nav>
 
       <div className="mt-auto">
-        <div className="p-4 border-t border-slate-800 space-y-1">
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-all text-xs font-semibold uppercase tracking-wider">
+        <div className="p-4 border-t border-interface-bg space-y-1 bg-interface-bg/10">
+          <button className="w-full flex items-center gap-3 px-3 py-2 text-text-muted hover:text-white hover:bg-interface-bg rounded-xl transition-all text-xs font-black uppercase tracking-wider">
             <Settings className="w-4 h-4" />
             <span>Configuración</span>
           </button>
-          <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-all text-xs font-semibold uppercase tracking-wider">
+          <button className="w-full flex items-center gap-3 px-3 py-2 text-text-muted hover:text-white hover:bg-interface-bg rounded-xl transition-all text-xs font-black uppercase tracking-wider">
             <HelpCircle className="w-4 h-4" />
             <span>Ayuda</span>
           </button>
         </div>
 
-        <div className="p-6 bg-slate-950">
-          <div className="text-[10px] text-slate-600 uppercase font-black mb-3 tracking-[0.2em]">Sincronización Cloud</div>
+        <div className="p-6 bg-interface-bg">
+          <div className="text-[9px] text-text-muted uppercase font-black mb-3 tracking-[0.2em] opacity-50">Sync Cloud MX-01</div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Estado: Operativo</span>
+            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">En Línea</span>
           </div>
         </div>
       </div>

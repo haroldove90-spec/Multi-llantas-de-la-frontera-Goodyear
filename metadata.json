@@ -1,6 +1,6 @@
 {
-  "name": "TyreTrack ERP",
-  "description": "Sistema de gestión integral para llanteras con control multi-sucursal, inventarios técnicos, traspasos y garantías.",
+  "name": "Multillantas de la Frontera Goodyear",
+  "description": "Portal multi-sucursal para Multillantas de la Frontera. Gestión de 3 sedes (Matriz, Norte, Sur) con dashboard dinámico por roles: Administrador, Vendedor, Técnico y Contador.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }

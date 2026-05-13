@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Sidebar from './components/Sidebar';
+import Sidebar, { navItems } from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Inventory from './components/Inventory';
 import Sales from './components/Sales';
@@ -7,6 +7,7 @@ import Transfers from './components/Transfers';
 import Warranties from './components/Warranties';
 import FiscalCenter from './components/FiscalCenter';
 import Branches from './components/Branches';
+import Customization from './components/Customization';
 import BranchSelector from './components/BranchSelector';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight } from 'lucide-react';
@@ -16,6 +17,20 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+
+  // Apply saved theme on mount
+  React.useEffect(() => {
+    const saved = localStorage.getItem('erp_theme');
+    if (saved) {
+      const theme = JSON.parse(saved);
+      const root = document.documentElement;
+      root.style.setProperty('--color-interface-bg', theme.primaryBg);
+      root.style.setProperty('--color-card-bg', theme.cardBg);
+      root.style.setProperty('--color-brand-red', theme.brandRed);
+      root.style.setProperty('--color-brand-blue', theme.brandBlue);
+      root.style.setProperty('--color-text-muted', theme.textMuted);
+    }
+  }, []);
 
   const selectedBranch = selectedBranchId === 'all' 
     ? { name: 'Corporativo Global', id: 'all' } 
@@ -54,6 +69,8 @@ export default function App() {
         return <Warranties userRole={userRole} branchId={selectedBranchId} />;
       case 'fiscal':
         return <FiscalCenter userRole={userRole} branchId={selectedBranchId} />;
+      case 'customization':
+        return <Customization />;
       case 'branches':
         return <Branches userRole={userRole} branchId={selectedBranchId} />;
       default:
@@ -62,48 +79,50 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans flex text-slate-900 overflow-hidden h-screen">
+    <div className="min-h-screen bg-interface-bg font-sans flex text-white overflow-hidden h-screen">
       <div className="hidden md:block">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} userRole={userRole} />
       </div>
       
       <main className="flex-1 md:ml-64 flex flex-col h-screen min-w-0">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 md:px-8 shrink-0 sticky top-0 z-30">
+        <header className="h-16 bg-card-bg border-b border-interface-bg flex items-center justify-between px-6 md:px-8 shrink-0 sticky top-0 z-30">
           <div className="flex items-center gap-3">
-             <div className="md:hidden w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white text-xs" onClick={handleLogout}>LL</div>
+             <div className="md:hidden w-8 h-8 bg-brand-red rounded flex items-center justify-center font-bold text-white text-xs" onClick={handleLogout}>
+               <img src="https://appdesign.appdesignproyectos.com/multillantas.png" alt="Logo" className="w-6" />
+             </div>
              <div className="flex flex-col">
-               <h1 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight leading-none">TyreTrack</h1>
+               <h1 className="text-sm md:text-base font-black text-white tracking-tight leading-none uppercase">Multillantas de la Frontera</h1>
                <div className="flex items-center gap-1 mt-1">
-                 <span className="text-[9px] font-black uppercase text-blue-600">{selectedBranch?.name}</span>
-                 <ChevronRight className="w-2.5 h-2.5 text-slate-300" />
-                 <span className="text-[9px] font-black uppercase text-slate-400 capitalize">{activeTab}</span>
+                 <span className="text-[9px] font-black uppercase text-brand-blue">{selectedBranch?.name}</span>
+                 <ChevronRight className="w-2.5 h-2.5 text-text-muted" />
+                 <span className="text-[9px] font-black uppercase text-text-muted capitalize">{activeTab}</span>
                </div>
              </div>
           </div>
           <div className="flex items-center gap-4 md:gap-6">
-            <div className="hidden sm:flex items-center gap-4 mr-4 border-r border-slate-100 pr-6">
+            <div className="hidden sm:flex items-center gap-4 mr-4 border-r border-interface-bg pr-6">
               <div className="flex flex-col items-end">
                 <span className={`text-[10px] font-black uppercase tracking-tight ${
-                  userRole === 'superadmin' ? 'text-purple-600' :
-                  userRole === 'gerente' ? 'text-blue-600' :
-                  userRole === 'contador' ? 'text-emerald-600' : 'text-orange-600'
+                  userRole === 'superadmin' ? 'text-brand-red' :
+                  userRole === 'gerente' ? 'text-brand-blue' :
+                  userRole === 'contador' ? 'text-emerald-500' : 'text-orange-500'
                 }`}>
                   {userRole?.replace('_', ' ')}
                 </span>
-                <span className="text-[9px] font-bold text-slate-400 uppercase">Sincronizado</span>
+                <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Sincronizado</span>
               </div>
               <button 
                 onClick={handleLogout}
-                className="p-2 bg-slate-50 text-slate-400 hover:text-red-500 rounded-lg transition-all"
+                className="p-2 bg-interface-bg text-text-muted hover:text-brand-red rounded-lg transition-all"
                 title="Salir de la sucursal"
               >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
-            <button className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors relative">
+            <button className="p-1.5 text-text-muted hover:text-white transition-colors relative">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full border-2 border-white"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-brand-red rounded-full border-2 border-card-bg"></span>
             </button>
           </div>
         </header>
@@ -126,39 +145,35 @@ export default function App() {
         </section>
 
         {/* Mobile Bottom Navigation */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 px-6 py-3 flex justify-between items-center z-50">
-          {[
-            { id: 'dashboard', icon: LayoutDashboard },
-            { id: 'inventory', icon: Package },
-            { id: 'sales', icon: ShoppingCart },
-            { id: 'transfers', icon: Truck },
-            { id: 'fiscal', icon: FileText },
-            { id: 'branches', icon: Store },
-          ].map((item) => {
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card-bg border-t border-interface-bg px-4 py-2 flex justify-around items-center z-50">
+          {navItems.filter(item => userRole && item.roles.includes(userRole)).slice(0, 5).map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`p-2 rounded-lg transition-all ${isActive ? 'bg-blue-600 text-white' : 'text-slate-500'}`}
+                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${
+                  isActive ? 'text-brand-red' : 'text-text-muted'
+                }`}
               >
-                <Icon className="w-6 h-6" />
+                <Icon className={`w-6 h-6 ${isActive ? 'scale-110' : ''} transition-transform`} />
+                <span className="text-[8px] font-black uppercase tracking-tighter">{item.label}</span>
               </button>
             );
           })}
         </nav>
 
         {/* Bottom Status Bar Desktop */}
-        <footer className="hidden md:flex h-10 bg-slate-900 text-white items-center px-8 text-[10px] justify-between shrink-0">
-          <div className="flex gap-6 uppercase tracking-wider font-bold opacity-60">
+        <footer className="hidden md:flex h-10 bg-interface-bg text-white items-center px-8 text-[10px] justify-between shrink-0 border-t border-card-bg">
+          <div className="flex gap-6 uppercase tracking-wider font-bold text-text-muted">
             <span>Sucursales: 03</span>
             <span>Sync: OK</span>
             <span>Usuario: Admin Master</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-400"></div>
-            <span className="opacity-80 font-medium">Servidores Cloud México</span>
+            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+            <span className="text-text-muted font-medium">Servidores Cloud México</span>
           </div>
         </footer>
       </main>
