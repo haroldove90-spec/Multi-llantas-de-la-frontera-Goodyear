@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar, { navItems } from './components/Sidebar';
+import Sidebar, { navItems, getOrderedNavItems } from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Inventory from './components/Inventory';
 import Sales from './components/Sales';
@@ -130,7 +130,7 @@ export default function App() {
   // Active tab safety redirect
   useEffect(() => {
     if (userRole) {
-      const allowedItems = navItems.filter(item => item.roles.includes(userRole));
+      const allowedItems = getOrderedNavItems(userRole);
       const isAllowed = allowedItems.some(item => item.id === activeTab);
       if (!isAllowed && allowedItems.length > 0) {
         setActiveTab(allowedItems[0].id);
@@ -157,17 +157,8 @@ export default function App() {
       setRealRole(null);
     }
     
-    let initialTab = 'dashboard';
-    if (role !== 'superadmin') {
-      if (role === 'vendedor') {
-        initialTab = 'sales';
-      } else if (role === 'contador') {
-        initialTab = 'orders_credits';
-      } else {
-        const allowedItems = navItems.filter(item => item.roles.includes(role));
-        initialTab = allowedItems.length > 0 ? allowedItems[0].id : 'inventory';
-      }
-    }
+    const orderedItems = getOrderedNavItems(role);
+    const initialTab = orderedItems.length > 0 ? orderedItems[0].id : 'inventory';
     setActiveTab(initialTab);
     localStorage.setItem('erp_active_tab', initialTab);
   };
@@ -186,10 +177,10 @@ export default function App() {
     setUserRole(role);
     localStorage.setItem('erp_user_role', role);
     // Adjust view context of simulated roles dynamically
-    const filteredNavItems = navItems.filter(item => item.roles.includes(role));
-    const activeTabAllowed = filteredNavItems.some(item => item.id === activeTab);
-    if (!activeTabAllowed && filteredNavItems.length > 0) {
-      const initialTab = filteredNavItems[0].id;
+    const allowedItems = getOrderedNavItems(role);
+    const activeTabAllowed = allowedItems.some(item => item.id === activeTab);
+    if (!activeTabAllowed && allowedItems.length > 0) {
+      const initialTab = allowedItems[0].id;
       setActiveTab(initialTab);
       localStorage.setItem('erp_active_tab', initialTab);
     }

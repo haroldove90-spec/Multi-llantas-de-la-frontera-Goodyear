@@ -33,14 +33,15 @@ interface SidebarProps {
 
 export const navItems = [
   { id: 'dashboard', label: 'Métricas', icon: LayoutDashboard, roles: ['superadmin'] },
-  { id: 'orders_credits', label: 'Pedidos y Cortes', icon: Coins, roles: ['contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'inventory', label: 'Inventario Maestro', icon: Package, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
+  { id: 'orders_credits', label: 'Pedidos y Cortes', icon: Coins, roles: ['contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'clients_notes', label: 'Clientes y Notas', icon: Users, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'transfers', label: 'Traspasos', icon: Truck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'warranties', label: 'Garantías', icon: ShieldCheck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'reports', label: 'Reportes', icon: FileText, roles: ['superadmin', 'contador'] },
+  { id: 'fiscal', label: 'Facturación / CFDI', icon: FileText, roles: ['secretaria_facturista'] },
   { id: 'credits_center', label: 'Créditos', icon: CreditCard, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza'] },
-  { id: 'accounts_payable', label: 'Cuentas x Pagar', icon: HandCoins, roles: ['superadmin', 'contador'] },
+  { id: 'accounts_payable', label: 'Cuentas x Pagar', icon: HandCoins, roles: ['superadmin', 'contador', 'secretaria_facturista'] },
   { id: 'sales', label: 'Cotizaciones', icon: ShoppingCart, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'customization', label: 'Preferencias', icon: Settings, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'help', label: 'Ayuda', icon: HelpCircle, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
@@ -75,6 +76,20 @@ export const getDynamicLabel = (itemId: string, role: UserRole | null): string =
       case 'customization': return 'Preferencias';
       case 'help': return 'Ayuda';
     }
+  } else if (role === 'secretaria_facturista') {
+    switch (itemId) {
+      case 'inventory': return 'Inventarios maestro';
+      case 'orders_credits': return 'Apartado, pedidos, créditos,';
+      case 'clients_notes': return 'Registro de clientes';
+      case 'transfers': return 'Traspasos tiempo real';
+      case 'warranties': return 'Garantias';
+      case 'fiscal': return 'Facturacion';
+      case 'credits_center': return 'Créditos ( Solo sucursale )';
+      case 'accounts_payable': return 'Cuentas por pagar';
+      case 'sales': return 'Cotizaciones';
+      case 'customization': return 'Preferencias';
+      case 'help': return 'Ayuda';
+    }
   } else {
     switch (itemId) {
       case 'dashboard': return 'Métricas';
@@ -94,8 +109,100 @@ export const getDynamicLabel = (itemId: string, role: UserRole | null): string =
   return '';
 };
 
+export const getOrderedNavItems = (role: UserRole | null) => {
+  if (!role) return [];
+
+  let idsOrder: string[] = [];
+  if (role === 'superadmin') {
+    idsOrder = [
+      'dashboard',
+      'inventory',
+      'clients_notes',
+      'transfers',
+      'warranties',
+      'reports',
+      'credits_center',
+      'accounts_payable',
+      'sales',
+      'customization',
+      'help'
+    ];
+  } else if (role === 'contador') {
+    idsOrder = [
+      'orders_credits',
+      'inventory',
+      'clients_notes',
+      'transfers',
+      'warranties',
+      'reports',
+      'credits_center',
+      'accounts_payable',
+      'sales',
+      'customization',
+      'help'
+    ];
+  } else if (role === 'secretaria_facturista') {
+    idsOrder = [
+      'inventory',
+      'orders_credits',
+      'clients_notes',
+      'transfers',
+      'warranties',
+      'fiscal',
+      'credits_center',
+      'accounts_payable',
+      'sales',
+      'customization',
+      'help'
+    ];
+  } else if (role === 'vendedor') {
+    idsOrder = [
+      'sales',
+      'orders_credits',
+      'inventory',
+      'clients_notes',
+      'transfers',
+      'warranties',
+      'customization',
+      'help'
+    ];
+  } else if (role === 'credito_cobranza') {
+    idsOrder = [
+      'orders_credits',
+      'inventory',
+      'clients_notes',
+      'transfers',
+      'warranties',
+      'credits_center',
+      'customization',
+      'help'
+    ];
+  } else {
+    idsOrder = [
+      'dashboard',
+      'orders_credits',
+      'inventory',
+      'clients_notes',
+      'transfers',
+      'warranties',
+      'reports',
+      'fiscal',
+      'credits_center',
+      'accounts_payable',
+      'sales',
+      'customization',
+      'help'
+    ];
+  }
+
+  const itemsMap = new Map(navItems.map(item => [item.id, item]));
+  return idsOrder
+    .map(id => itemsMap.get(id))
+    .filter((item): item is typeof navItems[0] => !!item && item.roles.includes(role));
+};
+
 export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onClose, onLogout, realRole, onSimulateRole }: SidebarProps) {
-  const filteredNavItems = navItems.filter(item => userRole && item.roles.includes(userRole));
+  const filteredNavItems = getOrderedNavItems(userRole);
   const [theme, setTheme] = React.useState<any>(() => {
     const defaultData = { 
       dashboardTitle: 'Multillantas de la Frontera', 
