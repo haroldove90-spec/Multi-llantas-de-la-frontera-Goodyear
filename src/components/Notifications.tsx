@@ -11,9 +11,9 @@ interface Notification {
 }
 
 const MOCK_NOTIFICATIONS: Notification[] = [
-  { id: '1', title: 'Inventario Bajo', message: 'La sucursal Norte reporta stock crítico en llantas Michelin.', type: 'alert', time: '5m ago' },
-  { id: '2', title: 'Nueva Venta', message: 'Se ha registrado una venta de $12,400 en Matriz Centro.', type: 'success', time: '12m ago' },
-  { id: '3', title: 'Traspaso Pendiente', message: 'Frontera solicita aprobación para traslado de rines.', type: 'warning', time: '1h ago' },
+  { id: '1', title: 'Inventario Bajo', message: 'La sucursal San Andres reporta stock crítico en llantas Michelin.', type: 'alert', time: '5m ago' },
+  { id: '2', title: 'Nueva Venta', message: 'Se ha registrado una venta de $12,400 en Sucursal Helios.', type: 'success', time: '12m ago' },
+  { id: '3', title: 'Traspaso Pendiente', message: 'Industrial solicita aprobación para traslado de rines.', type: 'warning', time: '1h ago' },
   { id: '4', title: 'Sistema Actualizado', message: 'Se han aplicado parches de seguridad al ERP.', type: 'info', time: '3h ago' },
 ];
 

@@ -343,8 +343,7 @@ export default function App() {
                       { id: 'contador', label: 'Contador', color: 'bg-emerald-600' },
                       { id: 'secretaria_facturista', label: 'Sec. Facturista', color: 'bg-pink-600' },
                       { id: 'credito_cobranza', label: 'Crédito', color: 'bg-cyan-600' },
-                      { id: 'vendedor', label: 'Vendedor', color: 'bg-orange-500' },
-                      { id: 'gerente', label: 'Técnico', color: 'bg-brand-blue' }
+                      { id: 'vendedor', label: 'Vendedor', color: 'bg-orange-500' }
                     ].map((btn) => (
                       <button
                         key={btn.id}

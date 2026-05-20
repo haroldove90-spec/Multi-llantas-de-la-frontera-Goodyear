@@ -338,9 +338,9 @@ export default function OrdersCredits({ userRole, branchId }: OrdersCreditsProps
                       value={newSale.branchId}
                       onChange={(e) => setNewSale({...newSale, branchId: e.target.value})}
                     >
-                      <option value="matriz">Centro</option>
-                      <option value="norte">Norte</option>
-                      <option value="sur">Frontera</option>
+                      <option value="matriz">Helios</option>
+                      <option value="norte">San Andres</option>
+                      <option value="sur">Industrial</option>
                     </select>
                   </div>
                 </div>

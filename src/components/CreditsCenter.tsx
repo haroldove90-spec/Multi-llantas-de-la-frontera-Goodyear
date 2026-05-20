@@ -144,9 +144,9 @@ export default function CreditsCenter({ userRole, branchId, singleBranchOnly = f
                   className="bg-card-bg border-none text-[10px] font-black uppercase tracking-wider text-white select-none outline-none py-1.5 px-3 rounded-lg cursor-pointer max-w-[120px]"
                 >
                   <option value="all">Todas</option>
-                  <option value="matriz">Centro</option>
-                  <option value="norte">Norte</option>
-                  <option value="sur">Frontera</option>
+                  <option value="matriz">Helios</option>
+                  <option value="norte">San Andres</option>
+                  <option value="sur">Industrial</option>
                 </select>
               </div>
             )}

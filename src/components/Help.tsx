@@ -22,7 +22,7 @@ export default function Help({ userRole }: HelpProps) {
     ],
     vendedor: [
       { title: 'Punto de Venta (POS)', text: 'Registra ventas, cotiza llantas Goodyear, selecciona sucursal y emite notas de remisión rápidas.' },
-      { title: 'Consulta de Inventario', text: 'Consulta el stock en tiempo real de Marcas, Tamaños y Modelos en Centro, Norte y Frontera.' },
+      { title: 'Consulta de Inventario', text: 'Consulta el stock en tiempo real de Marcas, Tamaños y Modelos en Helios, San Andres e Industrial.' },
       { title: 'Garantías Iniciales', text: 'Inicia el reporte de daño por parte del cliente capturando DOT, millaje y motivo de reclamo.' }
     ],
     contador: [

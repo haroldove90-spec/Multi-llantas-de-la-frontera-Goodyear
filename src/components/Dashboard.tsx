@@ -55,11 +55,11 @@ export default function Dashboard({ userRole, branchId }: DashboardProps) {
 
   // Live Feed Simulation Data
   const liveEvents = [
-    { time: '2 min', user: 'Ana Lopez', action: 'Venta Nueva', desc: '4x Michelin Pilot Sport', branch: 'Norte' },
-    { time: '5 min', user: 'System', action: 'Alerta Stock', desc: 'Existencias críticas en Sucursal Centro', branch: 'Centro' },
-    { time: '12 min', user: 'Roberto Conta', action: 'Conciliación', desc: 'Cierre de caja autorizado', branch: 'Norte' },
-    { time: '18 min', user: 'Julian Cantón', action: 'Traspaso', desc: 'Envío recibido desde Centro', branch: 'Sur' },
-  ].filter(e => !branchId || branchId === 'all' || e.branch.toLowerCase().includes(branchId.toLowerCase()));
+    { time: '2 min', user: 'Ana Lopez', action: 'Venta Nueva', desc: '4x Michelin Pilot Sport', branch: 'San Andres', bId: 'norte' },
+    { time: '5 min', user: 'System', action: 'Alerta Stock', desc: 'Existencias críticas en Sucursal Helios', branch: 'Helios', bId: 'matriz' },
+    { time: '12 min', user: 'Roberto Conta', action: 'Conciliación', desc: 'Cierre de caja autorizado', branch: 'San Andres', bId: 'norte' },
+    { time: '18 min', user: 'Julian Cantón', action: 'Traspaso', desc: 'Envío recibido desde Helios', branch: 'Industrial', bId: 'sur' },
+  ].filter(e => !branchId || branchId === 'all' || e.bId === branchId);
 
   // Branch Performance
   const branchData = BRANCHES.map(branch => {

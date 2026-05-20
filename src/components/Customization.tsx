@@ -343,7 +343,6 @@ export default function Customization() {
             <div className="space-y-4">
               {[
                 { role: 'Administrador', modules: 'Todos los módulos' },
-                { role: 'Técnico / Asesor', modules: 'Inventario, Traspasos, Garantías' },
                 { role: 'Vendedor', modules: 'PV, Inventario, Reportes' },
                 { role: 'Contador', modules: 'Fiscal, Ventas, Sucursales' }
               ].map((r, i) => (
