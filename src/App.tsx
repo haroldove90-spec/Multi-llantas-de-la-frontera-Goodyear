@@ -16,8 +16,9 @@ import OrdersCredits from './components/OrdersCredits';
 import CreditsCenter from './components/CreditsCenter';
 import AccountsPayable from './components/AccountsPayable';
 import ReportsStatistics from './components/ReportsStatistics';
+import LoginForm from './components/LoginForm';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight, Menu, ShieldCheck } from 'lucide-react';
+import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight, Menu, ShieldCheck, RefreshCw } from 'lucide-react';
 import { BRANCHES, UserRole } from './data/mockData';
 import { supabase } from './lib/supabase';
 
@@ -43,6 +44,8 @@ export default function App() {
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(() => localStorage.getItem('erp_selected_branch'));
   const [userRole, setUserRole] = useState<UserRole | null>(() => localStorage.getItem('erp_user_role') as UserRole || null);
   const [realRole, setRealRole] = useState<UserRole | null>(() => localStorage.getItem('erp_real_role') as UserRole || null);
+  const [userName, setUserName] = useState<string | null>(() => localStorage.getItem('erp_user_name') || null);
+  const [userEmail, setUserEmail] = useState<string | null>(() => localStorage.getItem('erp_user_email') || null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [theme, setTheme] = useState<any>(() => {
@@ -143,19 +146,21 @@ export default function App() {
     ? { name: 'Corporativo Global', id: 'all' } 
     : BRANCHES.find(b => b.id === selectedBranchId);
 
-  const handleBranchSelect = (branchId: string, role: UserRole) => {
-    setSelectedBranchId(branchId);
+  const handleLoginSuccess = (name: string, email: string, role: UserRole, branchId: string) => {
+    setUserName(name);
+    setUserEmail(email);
     setUserRole(role);
-    localStorage.setItem('erp_selected_branch', branchId);
+    setRealRole(role);
+    localStorage.setItem('erp_user_name', name);
+    localStorage.setItem('erp_user_email', email);
     localStorage.setItem('erp_user_role', role);
-    
-    if (role === 'superadmin') {
-      localStorage.setItem('erp_real_role', 'superadmin');
-      setRealRole('superadmin');
-    } else {
-      localStorage.removeItem('erp_real_role');
-      setRealRole(null);
-    }
+    localStorage.setItem('erp_real_role', role);
+
+    // If superadmin, default branch to 'all' (Corporativo Global)
+    // Non-superadmins are locked strictly to their pre-configured branch
+    const targetBranch = role === 'superadmin' ? 'all' : branchId;
+    setSelectedBranchId(targetBranch);
+    localStorage.setItem('erp_selected_branch', targetBranch);
     
     const orderedItems = getOrderedNavItems(role);
     const initialTab = orderedItems.length > 0 ? orderedItems[0].id : 'inventory';
@@ -167,10 +172,14 @@ export default function App() {
     setSelectedBranchId(null);
     setUserRole(null);
     setRealRole(null);
+    setUserName(null);
+    setUserEmail(null);
     localStorage.removeItem('erp_selected_branch');
     localStorage.removeItem('erp_user_role');
     localStorage.removeItem('erp_real_role');
     localStorage.removeItem('erp_active_tab');
+    localStorage.removeItem('erp_user_name');
+    localStorage.removeItem('erp_user_email');
   };
 
   const handleSimulateRole = (role: UserRole) => {
@@ -191,14 +200,15 @@ export default function App() {
     localStorage.setItem('erp_active_tab', tab);
   };
 
-  if (!selectedBranchId) {
-    return <BranchSelector onSelect={handleBranchSelect} />;
+  // If there's no authenticated user, require beautiful Total Black LoginForm first
+  if (!userRole || !userName) {
+    return <LoginForm onLoginSuccess={handleLoginSuccess} />;
   }
 
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard userRole={userRole} branchId={selectedBranchId} />;
+        return <Dashboard userRole={userRole} branchId={selectedBranchId} userName={userName} />;
       case 'inventory':
         return <Inventory userRole={userRole} branchId={selectedBranchId} />;
       case 'sales':
@@ -262,25 +272,59 @@ export default function App() {
                 </h1>
                 <p className="text-brand-blue font-black uppercase italic tracking-widest mt-1 hidden md:block" style={{ fontSize: 'var(--dashboard-subtitle-size, 10px)' }}>
                   {theme.dashboardSubtitle}
-                </p>
-                <div className="flex items-center gap-1 mt-1 md:hidden">
-                  <span className="text-[9px] font-black uppercase text-brand-blue">{selectedBranch?.name}</span>
+                </p>                 <div className="flex items-center gap-1 mt-1 md:hidden">
+                  {realRole === 'superadmin' ? (
+                    <select
+                      value={selectedBranchId || 'all'}
+                      onChange={(e) => {
+                        setSelectedBranchId(e.target.value);
+                        localStorage.setItem('erp_selected_branch', e.target.value);
+                      }}
+                      className="bg-black/80 text-brand-blue text-[9px] font-black uppercase tracking-wider py-0.5 px-2 rounded border border-white/5 outline-none focus:border-brand-red cursor-pointer"
+                    >
+                      <option value="all">Corp. Global</option>
+                      {BRANCHES.map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-[9px] font-black uppercase text-brand-blue">{selectedBranch?.name}</span>
+                  )}
                   <ChevronRight className="w-2.5 h-2.5 text-text-muted" />
                   <span className="text-[9px] font-black uppercase text-text-muted capitalize">{activeTab}</span>
                 </div>
               </div>
               <div className="hidden md:flex flex-col">
-               <div className="flex items-center gap-1">
-                 <span className="text-[10px] font-black uppercase text-brand-blue">{selectedBranch?.name}</span>
-                 <ChevronRight className="w-2.5 h-2.5 text-text-muted" />
-                 <span className="text-[10px] font-black uppercase text-text-muted capitalize tracking-widest italic">{activeTab}</span>
-               </div>
-             </div>
+                <div className="flex items-center gap-1">
+                  {realRole === 'superadmin' ? (
+                    <select
+                      value={selectedBranchId || 'all'}
+                      onChange={(e) => {
+                        setSelectedBranchId(e.target.value);
+                        localStorage.setItem('erp_selected_branch', e.target.value);
+                      }}
+                      className="bg-black/65 text-brand-blue text-[10px] font-black uppercase tracking-widest py-1.5 px-3 rounded-xl border border-zinc-900 outline-none focus:border-brand-red cursor-pointer font-bold hover:bg-neutral-900 transition-all shadow-inner"
+                    >
+                      <option value="all">CORPORATIVO (5 SUCURSALES)</option>
+                      {BRANCHES.map(b => (
+                        <option key={b.id} value={b.id}>SUCURSAL: {b.name.toUpperCase()}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-[10px] font-black uppercase text-brand-blue">{selectedBranch?.name}</span>
+                  )}
+                  <ChevronRight className="w-2.5 h-2.5 text-text-muted" />
+                  <span className="text-[10px] font-black uppercase text-text-muted capitalize tracking-widest italic">{activeTab}</span>
+                </div>
+              </div>
           </div>
           <div className="flex items-center gap-4 md:gap-6">
             <div className="hidden sm:flex items-center gap-4 mr-4 border-r border-interface-bg pr-6">
               <div className="flex flex-col items-end">
-                <span className={`text-[10px] font-black uppercase tracking-tight ${
+                <span className="text-[11px] font-black text-white tracking-tight uppercase leading-none mb-1">
+                  {userName}
+                </span>
+                <span className={`text-[9px] font-black uppercase tracking-tight ${
                   userRole === 'superadmin' ? 'text-brand-red' :
                   userRole === 'contador' ? 'text-emerald-500' :
                   userRole === 'secretaria_facturista' ? 'text-pink-500' :
@@ -288,14 +332,14 @@ export default function App() {
                 }`}>
                   {userRole?.replace(/_/g, ' ')}
                 </span>
-                <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">
+                <span className="text-[8px] font-bold text-text-muted uppercase tracking-widest mt-0.5">
                   {realRole === 'superadmin' && userRole !== 'superadmin' ? 'Vista Simulada' : 'Sincronizado'}
                 </span>
               </div>
               <button 
                 onClick={handleLogout}
                 className="p-2 bg-interface-bg text-text-muted hover:text-brand-red rounded-lg transition-all"
-                title="Salir de la sucursal"
+                title="Cerrar sesión"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -379,9 +423,9 @@ export default function App() {
         {/* Bottom Status Bar Desktop */}
         <footer className="hidden md:flex h-10 bg-interface-bg text-white items-center px-8 text-[10px] justify-between shrink-0 border-t border-card-bg">
           <div className="flex gap-6 uppercase tracking-wider font-bold text-text-muted">
-            <span>Sucursales: 03</span>
+            <span>Sucursales: 05</span>
             <span>Sync: OK</span>
-            <span>Usuario: Admin Master</span>
+            <span>Usuario: {userName || 'Invitado'}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500"></div>

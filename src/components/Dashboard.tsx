@@ -30,9 +30,10 @@ import {
 interface DashboardProps {
   userRole?: UserRole | null;
   branchId?: string | null;
+  userName?: string | null;
 }
 
-export default function Dashboard({ userRole, branchId }: DashboardProps) {
+export default function Dashboard({ userRole, branchId, userName }: DashboardProps) {
   const isSuperAdmin = userRole === 'superadmin';
   const isGerente = false;
   const isVendedor = userRole === 'vendedor';
@@ -100,6 +101,31 @@ export default function Dashboard({ userRole, branchId }: DashboardProps) {
 
   return (
     <div className="space-y-8 bg-interface-bg min-h-screen text-white pb-20">
+      {/* Dynamic Welcome Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card-bg border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6"
+      >
+        <div className="absolute right-0 top-0 w-80 h-80 bg-brand-red/5 rounded-full blur-[80px] pointer-events-none"></div>
+
+        <div className="space-y-2">
+          <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-white leading-none">
+            ¡HOLA, <span className="text-[#ffb700]">{userName || 'OPERADOR'}</span>!
+          </h2>
+          <p className="text-text-muted text-[10px] md:text-sm font-black uppercase tracking-widest italic">
+            Sesión activa • ROL: <span className="text-brand-red font-bold">{(userRole || '').replace(/_/g, ' ')}</span>
+          </p>
+        </div>
+        
+        <div className="flex gap-4 p-1.5 bg-interface-bg border border-zinc-900 rounded-2xl px-6 py-2.5 shrink-0 self-start md:self-center">
+          <span className="text-[10px] font-black text-[#ffb700] uppercase flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-brand-blue animate-pulse"></div>
+            SUCURSAL ACTUAL: {BRANCHES.find(b => b.id === branchId)?.name.toUpperCase() || 'CORPORATIVO GLOBAL'}
+          </span>
+        </div>
+      </motion.div>
+
       {/* Vendedor Quick Actions */}
       {isVendedor && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 mt-4">

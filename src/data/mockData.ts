@@ -8,28 +8,25 @@ export interface User {
   email: string;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  role: UserRole;
+  branchId: string | 'all'; // 'all' for superadmin
+  email: string;
+  password?: string;
+}
+
 export const USERS: User[] = [
-  // Matriz
-  { id: 'u1', name: 'Harold (Owner)', role: 'superadmin', branchId: 'all', email: 'harold@multillantas.com' },
-  { id: 'u2', name: 'Ricardo Salgado', role: 'vendedor', branchId: 'matriz', email: 'ricardo.m@multillantas.com' },
-  { id: 'u3', name: 'Alicia CP', role: 'contador', branchId: 'matriz', email: 'alicia.c@multillantas.com' },
-  { id: 'u4', name: 'Pedro Ventas', role: 'vendedor', branchId: 'matriz', email: 'pedro.v@multillantas.com' },
-  { id: 'u13', name: 'Ximena Facturas', role: 'secretaria_facturista', branchId: 'matriz', email: 'ximena.f@multillantas.com' },
-  { id: 'u14', name: 'Carlos Crédito', role: 'credito_cobranza', branchId: 'matriz', email: 'carlos.c@multillantas.com' },
-  // Norte
-  { id: 'u5', name: 'Sofía Admin', role: 'superadmin', branchId: 'all', email: 'sofia@multillantas.com' },
-  { id: 'u6', name: 'Martha Ruiz', role: 'vendedor', branchId: 'norte', email: 'martha.n@multillantas.com' },
-  { id: 'u7', name: 'Roberto Conta', role: 'contador', branchId: 'norte', email: 'roberto.c@multillantas.com' },
-  { id: 'u8', name: 'Ana Lopez', role: 'vendedor', branchId: 'norte', email: 'ana.v@multillantas.com' },
-  { id: 'u15', name: 'Lucía S.', role: 'secretaria_facturista', branchId: 'norte', email: 'lucia.s@multillantas.com' },
-  { id: 'u16', name: 'Eduardo C.', role: 'credito_cobranza', branchId: 'norte', email: 'eduardo.c@multillantas.com' },
-  // Sur
-  { id: 'u9', name: 'Carlos Master', role: 'superadmin', branchId: 'all', email: 'carlos@multillantas.com' },
-  { id: 'u10', name: 'Julian Cantón', role: 'vendedor', branchId: 'sur', email: 'julian.s@multillantas.com' },
-  { id: 'u11', name: 'Elena Fiscal', role: 'contador', branchId: 'sur', email: 'elena.c@multillantas.com' },
-  { id: 'u12', name: 'Hugo Mendez', role: 'vendedor', branchId: 'sur', email: 'hugo.v@multillantas.com' },
-  { id: 'u17', name: 'Gabriela F.', role: 'secretaria_facturista', branchId: 'sur', email: 'gabriela.f@multillantas.com' },
-  { id: 'u18', name: 'Diego Cr.', role: 'credito_cobranza', branchId: 'sur', email: 'diego.cr@multillantas.com' },
+  { id: 'u1', name: 'Manuel Esparza', role: 'superadmin', branchId: 'all', email: 'manuel_esparza@multillantas.com', password: '123_esparza' },
+  { id: 'u2_1', name: 'Manuel Villaseñor', role: 'vendedor', branchId: 'norte', email: 'manuel_villasenor@multillantas.com', password: '123_vendedor' },
+  { id: 'u2_2', name: 'Manuel Villaseñor', role: 'vendedor', branchId: 'norte', email: 'manuel:villasenor@multillantas.com', password: '123_vendedor' }, // support literal colon typo from prompt
+  { id: 'u3', name: 'Liliana Medina', role: 'contador', branchId: 'matriz', email: 'liliana_medina@multillantas.com', password: '123_contador' },
+  { id: 'u4', name: 'Mario Vargas', role: 'vendedor', branchId: 'matriz', email: 'mario_vargas@multillantas.com', password: '123_vendedor' },
+  { id: 'u5', name: 'Magdalena López', role: 'secretaria_facturista', branchId: 'matriz', email: 'magdalena_lopez@multillantas.com', password: '123_facturista' },
+  { id: 'u6', name: 'Cristian Esparza', role: 'vendedor', branchId: 'oriente', email: 'cristian_esparza@multillantas.com', password: '123_vendedor' },
+  { id: 'u7', name: 'Misael Esparza', role: 'credito_cobranza', branchId: 'poniente', email: 'misael_esparza@multillantas.com', password: '123_credito' },
+  { id: 'u8', name: 'Alfredo Esparza', role: 'vendedor', branchId: 'sur', email: 'alfredo_esparza@miltillantas.com', password: '123_vendedor' }
 ];
 
 export interface Branch {
@@ -130,12 +127,30 @@ export const BRANCHES: Branch[] = [
     phone: '999 923 4567',
     schedule: 'Lun-Vie 8:00 - 18:00, Sab 8:00 - 13:00'
   },
+  { 
+    id: 'oriente', 
+    name: 'Oriente', 
+    location: 'Av. Oriente 102, Veracruz, VER',
+    manager: 'Ing. Misael Esparza',
+    phone: '229 934 5678',
+    schedule: 'Lun-Vie 8:00 - 18:00, Sab 8:00 - 14:00'
+  },
+  { 
+    id: 'poniente', 
+    name: 'Poniente', 
+    location: 'Av. Poniente 870, Guadalajara, JAL',
+    manager: 'Alfredo Esparza',
+    phone: '333 456 7890',
+    schedule: 'Lun-Vie 9:00 - 19:00, Sab 9:00 - 15:00'
+  }
 ];
 
 export const BRANCH_SUMMARIES: BranchSummary[] = [
   { branchId: 'matriz', dailySales: 15450, lowStockCount: 5, employeeCount: 12 },
   { branchId: 'norte', dailySales: 8200, lowStockCount: 2, employeeCount: 8 },
   { branchId: 'sur', dailySales: 12100, lowStockCount: 12, employeeCount: 10 },
+  { branchId: 'oriente', dailySales: 6500, lowStockCount: 3, employeeCount: 6 },
+  { branchId: 'poniente', dailySales: 9400, lowStockCount: 4, employeeCount: 7 },
 ];
 
 export const TIRES: Tire[] = [
