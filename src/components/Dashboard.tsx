@@ -34,7 +34,7 @@ interface DashboardProps {
 
 export default function Dashboard({ userRole, branchId }: DashboardProps) {
   const isSuperAdmin = userRole === 'superadmin';
-  const isGerente = userRole === 'gerente';
+  const isGerente = false;
   const isVendedor = userRole === 'vendedor';
   const isContador = userRole === 'contador';
   const hasFinancialAccess = isSuperAdmin; 

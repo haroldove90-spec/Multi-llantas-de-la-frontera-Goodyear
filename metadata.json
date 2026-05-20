@@ -1,6 +1,6 @@
 {
   "name": "Multillantas de la Frontera Goodyear",
-  "description": "Portal multi-sucursal para Multillantas de la Frontera. Gestión de 3 sedes (Matriz, Norte, Sur) con dashboard dinámico por roles: Administrador, Vendedor, Técnico y Contador.",
+  "description": "Portal multi-sucursal para Multillantas de la Frontera. Gestión de 3 sedes (Centro, Norte, Frontera) con dashboard dinámico por roles: Administrador, Contador, Secretaria Facturista, Crédito y Cobranza, y Vendedor.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -1,4 +1,4 @@
-export type UserRole = 'superadmin' | 'gerente' | 'contador' | 'vendedor';
+export type UserRole = 'superadmin' | 'contador' | 'vendedor' | 'secretaria_facturista' | 'credito_cobranza';
 
 export interface User {
   id: string;
@@ -11,19 +11,25 @@ export interface User {
 export const USERS: User[] = [
   // Matriz
   { id: 'u1', name: 'Harold (Owner)', role: 'superadmin', branchId: 'all', email: 'harold@multillantas.com' },
-  { id: 'u2', name: 'Ricardo Salgado', role: 'gerente', branchId: 'matriz', email: 'ricardo.m@multillantas.com' },
+  { id: 'u2', name: 'Ricardo Salgado', role: 'vendedor', branchId: 'matriz', email: 'ricardo.m@multillantas.com' },
   { id: 'u3', name: 'Alicia CP', role: 'contador', branchId: 'matriz', email: 'alicia.c@multillantas.com' },
   { id: 'u4', name: 'Pedro Ventas', role: 'vendedor', branchId: 'matriz', email: 'pedro.v@multillantas.com' },
+  { id: 'u13', name: 'Ximena Facturas', role: 'secretaria_facturista', branchId: 'matriz', email: 'ximena.f@multillantas.com' },
+  { id: 'u14', name: 'Carlos Crédito', role: 'credito_cobranza', branchId: 'matriz', email: 'carlos.c@multillantas.com' },
   // Norte
   { id: 'u5', name: 'Sofía Admin', role: 'superadmin', branchId: 'all', email: 'sofia@multillantas.com' },
-  { id: 'u6', name: 'Martha Ruiz', role: 'gerente', branchId: 'norte', email: 'martha.n@multillantas.com' },
+  { id: 'u6', name: 'Martha Ruiz', role: 'vendedor', branchId: 'norte', email: 'martha.n@multillantas.com' },
   { id: 'u7', name: 'Roberto Conta', role: 'contador', branchId: 'norte', email: 'roberto.c@multillantas.com' },
   { id: 'u8', name: 'Ana Lopez', role: 'vendedor', branchId: 'norte', email: 'ana.v@multillantas.com' },
+  { id: 'u15', name: 'Lucía S.', role: 'secretaria_facturista', branchId: 'norte', email: 'lucia.s@multillantas.com' },
+  { id: 'u16', name: 'Eduardo C.', role: 'credito_cobranza', branchId: 'norte', email: 'eduardo.c@multillantas.com' },
   // Sur
   { id: 'u9', name: 'Carlos Master', role: 'superadmin', branchId: 'all', email: 'carlos@multillantas.com' },
-  { id: 'u10', name: 'Julian Cantón', role: 'gerente', branchId: 'sur', email: 'julian.s@multillantas.com' },
+  { id: 'u10', name: 'Julian Cantón', role: 'vendedor', branchId: 'sur', email: 'julian.s@multillantas.com' },
   { id: 'u11', name: 'Elena Fiscal', role: 'contador', branchId: 'sur', email: 'elena.c@multillantas.com' },
   { id: 'u12', name: 'Hugo Mendez', role: 'vendedor', branchId: 'sur', email: 'hugo.v@multillantas.com' },
+  { id: 'u17', name: 'Gabriela F.', role: 'secretaria_facturista', branchId: 'sur', email: 'gabriela.f@multillantas.com' },
+  { id: 'u18', name: 'Diego Cr.', role: 'credito_cobranza', branchId: 'sur', email: 'diego.cr@multillantas.com' },
 ];
 
 export interface Branch {

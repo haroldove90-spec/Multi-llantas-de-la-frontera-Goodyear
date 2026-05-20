@@ -12,7 +12,11 @@ import {
   FileText,
   Palette,
   X,
-  LogOut
+  LogOut,
+  Users,
+  CreditCard,
+  HandCoins,
+  Coins
 } from 'lucide-react';
 import { UserRole } from '../data/mockData';
 
@@ -23,21 +27,27 @@ interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   onLogout?: () => void;
+  realRole?: UserRole | null;
+  onSimulateRole?: (role: UserRole) => void;
 }
 
 export const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['superadmin', 'gerente'] },
-  { id: 'inventory', label: 'Inventario', icon: Package, roles: ['superadmin', 'gerente', 'vendedor'] },
-  { id: 'sales', label: 'Punto de Venta', icon: ShoppingCart, roles: ['superadmin', 'contador', 'vendedor'] },
-  { id: 'transfers', label: 'Traspasos', icon: Truck, roles: ['superadmin', 'gerente'] },
-  { id: 'warranties', label: 'Garantías', icon: ShieldCheck, roles: ['superadmin', 'gerente'] },
-  { id: 'fiscal', label: 'Centro Fiscal', icon: FileText, roles: ['superadmin', 'contador'] },
+  { id: 'dashboard', label: 'Métricas y Reportes', icon: LayoutDashboard, roles: ['superadmin', 'contador'] },
+  { id: 'inventory', label: 'Inventario Maestro', icon: Package, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
+  { id: 'sales', label: 'Cotizaciones', icon: ShoppingCart, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
+  { id: 'clients_notes', label: 'Clientes y Notas', icon: Users, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
+  { id: 'orders_credits', label: 'Pedidos y Cortes', icon: Coins, roles: ['contador', 'secretaria_facturista', 'credito_cobranza'] },
+  { id: 'transfers', label: 'Traspasos', icon: Truck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
+  { id: 'warranties', label: 'Garantías', icon: ShieldCheck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
+  { id: 'fiscal', label: 'Facturación / CFDI', icon: FileText, roles: ['contador', 'secretaria_facturista', 'credito_cobranza'] },
+  { id: 'credits_center', label: 'Créditos', icon: CreditCard, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza'] },
+  { id: 'accounts_payable', label: 'Cuentas x Pagar', icon: HandCoins, roles: ['superadmin', 'contador'] },
   { id: 'branches', label: 'Sucursales', icon: Store, roles: ['superadmin'] },
   { id: 'customization', label: 'Configuración', icon: Settings, roles: ['superadmin'] },
-  { id: 'help', label: 'Ayuda', icon: HelpCircle, roles: ['superadmin', 'gerente', 'contador', 'vendedor'] },
+  { id: 'help', label: 'Ayuda', icon: HelpCircle, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
 ];
 
-export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onClose, onLogout }: SidebarProps) {
+export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onClose, onLogout, realRole, onSimulateRole }: SidebarProps) {
   const filteredNavItems = navItems.filter(item => userRole && item.roles.includes(userRole));
   const [theme, setTheme] = React.useState<any>(() => {
     const defaultData = { 
@@ -70,16 +80,18 @@ export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onC
 
   const roleColors = {
     superadmin: 'border-brand-red text-brand-red',
-    gerente: 'border-brand-blue text-brand-blue',
     contador: 'border-emerald-500 text-emerald-500',
-    vendedor: 'border-orange-500 text-orange-500'
+    secretaria_facturista: 'border-pink-500 text-pink-500',
+    credito_cobranza: 'border-cyan-500 text-cyan-500',
+    vendedor: 'border-orange-500 text-orange-500',
   };
 
   const roleLabels = {
-    superadmin: 'Administrador',
-    gerente: 'Técnico / Asesor',
+    superadmin: 'Administrador / Admin',
     contador: 'Contador',
-    vendedor: 'Vendedor'
+    secretaria_facturista: 'Secretaria Facturista',
+    credito_cobranza: 'Crédito y Cobranza',
+    vendedor: 'Vendedor',
   };
 
   return (
@@ -130,9 +142,32 @@ export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onC
           )}
         </div>
         {userRole && (
-          <div className={`px-3 py-1.5 rounded-xl border bg-interface-bg flex items-center justify-center gap-2 ${roleColors[userRole]}`}>
-            <div className={`w-1.5 h-1.5 rounded-full bg-current shadow-[0_0_8px_currentColor]`}></div>
-            <span className="text-[9px] font-black uppercase tracking-widest">{roleLabels[userRole]}</span>
+          <div className="space-y-2 w-full">
+            <div className={`px-3 py-1.5 rounded-xl border bg-interface-bg flex items-center justify-center gap-2 ${roleColors[userRole]}`}>
+              <div className={`w-1.5 h-1.5 rounded-full bg-current shadow-[0_0_8px_currentColor] ${userRole !== 'superadmin' ? 'animate-pulse' : ''}`}></div>
+              <span className="text-[9px] font-black uppercase tracking-widest leading-none">
+                {userRole !== 'superadmin' ? 'Simulado: ' : ''}{roleLabels[userRole]}
+              </span>
+            </div>
+            
+            {realRole === 'superadmin' && onSimulateRole && (
+              <div className="bg-black/40 border border-white/5 p-2 rounded-xl">
+                <p className="text-[8px] font-black text-brand-red uppercase tracking-[0.2em] mb-1.5 text-center">Simular Perfil</p>
+                <div className="relative">
+                  <select 
+                    value={userRole || 'superadmin'} 
+                    onChange={(e) => onSimulateRole(e.target.value as UserRole)}
+                    className="w-full bg-interface-bg hover:bg-interface-bg/80 text-white text-[10px] font-black uppercase tracking-wider py-1 px-2.5 rounded-lg border border-white/10 outline-none focus:border-brand-red cursor-pointer appearance-none text-center"
+                  >
+                    <option value="superadmin">Administrador</option>
+                    <option value="contador">Contador</option>
+                    <option value="secretaria_facturista">Sec. Facturista</option>
+                    <option value="credito_cobranza">Crédito y Cobro</option>
+                    <option value="vendedor">Vendedor</option>
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

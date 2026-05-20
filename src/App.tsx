@@ -11,8 +11,12 @@ import Customization from './components/Customization';
 import BranchSelector from './components/BranchSelector';
 import Notifications from './components/Notifications';
 import Help from './components/Help';
+import ClientsNotes from './components/ClientsNotes';
+import OrdersCredits from './components/OrdersCredits';
+import CreditsCenter from './components/CreditsCenter';
+import AccountsPayable from './components/AccountsPayable';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight, Menu } from 'lucide-react';
+import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight, Menu, ShieldCheck } from 'lucide-react';
 import { BRANCHES, UserRole } from './data/mockData';
 import { supabase } from './lib/supabase';
 
@@ -37,6 +41,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('erp_active_tab') || 'dashboard');
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(() => localStorage.getItem('erp_selected_branch'));
   const [userRole, setUserRole] = useState<UserRole | null>(() => localStorage.getItem('erp_user_role') as UserRole || null);
+  const [realRole, setRealRole] = useState<UserRole | null>(() => localStorage.getItem('erp_real_role') as UserRole || null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [theme, setTheme] = useState<any>(() => {
@@ -131,6 +136,14 @@ export default function App() {
     localStorage.setItem('erp_selected_branch', branchId);
     localStorage.setItem('erp_user_role', role);
     
+    if (role === 'superadmin') {
+      localStorage.setItem('erp_real_role', 'superadmin');
+      setRealRole('superadmin');
+    } else {
+      localStorage.removeItem('erp_real_role');
+      setRealRole(null);
+    }
+    
     let initialTab = 'dashboard';
     if (role === 'vendedor' || role === 'contador') {
       initialTab = role === 'vendedor' ? 'sales' : 'fiscal';
@@ -142,9 +155,24 @@ export default function App() {
   const handleLogout = () => {
     setSelectedBranchId(null);
     setUserRole(null);
+    setRealRole(null);
     localStorage.removeItem('erp_selected_branch');
     localStorage.removeItem('erp_user_role');
+    localStorage.removeItem('erp_real_role');
     localStorage.removeItem('erp_active_tab');
+  };
+
+  const handleSimulateRole = (role: UserRole) => {
+    setUserRole(role);
+    localStorage.setItem('erp_user_role', role);
+    // Adjust view context of simulated roles dynamically
+    const filteredNavItems = navItems.filter(item => item.roles.includes(role));
+    const activeTabAllowed = filteredNavItems.some(item => item.id === activeTab);
+    if (!activeTabAllowed && filteredNavItems.length > 0) {
+      const initialTab = filteredNavItems[0].id;
+      setActiveTab(initialTab);
+      localStorage.setItem('erp_active_tab', initialTab);
+    }
   };
 
   const handleUpdateTab = (tab: string) => {
@@ -164,12 +192,20 @@ export default function App() {
         return <Inventory userRole={userRole} branchId={selectedBranchId} />;
       case 'sales':
         return <Sales userRole={userRole} branchId={selectedBranchId} />;
+      case 'clients_notes':
+        return <ClientsNotes userRole={userRole} branchId={selectedBranchId} />;
+      case 'orders_credits':
+        return <OrdersCredits userRole={userRole} branchId={selectedBranchId} />;
       case 'transfers':
         return <Transfers userRole={userRole} branchId={selectedBranchId} />;
       case 'warranties':
         return <Warranties userRole={userRole} branchId={selectedBranchId} />;
       case 'fiscal':
         return <FiscalCenter userRole={userRole} branchId={selectedBranchId} />;
+      case 'credits_center':
+        return <CreditsCenter userRole={userRole} branchId={selectedBranchId} />;
+      case 'accounts_payable':
+        return <AccountsPayable userRole={userRole} branchId={selectedBranchId} />;
       case 'customization':
         return <Customization />;
       case 'branches':
@@ -193,6 +229,8 @@ export default function App() {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onLogout={handleLogout}
+        realRole={realRole}
+        onSimulateRole={handleSimulateRole}
       />
       
       <main className="flex-1 md:ml-64 flex flex-col h-screen min-w-0">
@@ -231,12 +269,15 @@ export default function App() {
               <div className="flex flex-col items-end">
                 <span className={`text-[10px] font-black uppercase tracking-tight ${
                   userRole === 'superadmin' ? 'text-brand-red' :
-                  userRole === 'gerente' ? 'text-brand-blue' :
-                  userRole === 'contador' ? 'text-emerald-500' : 'text-orange-500'
+                  userRole === 'contador' ? 'text-emerald-500' :
+                  userRole === 'secretaria_facturista' ? 'text-pink-500' :
+                  userRole === 'credito_cobranza' ? 'text-cyan-500' : 'text-orange-500'
                 }`}>
-                  {userRole?.replace('_', ' ')}
+                  {userRole?.replace(/_/g, ' ')}
                 </span>
-                <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Sincronizado</span>
+                <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">
+                  {realRole === 'superadmin' && userRole !== 'superadmin' ? 'Vista Simulada' : 'Sincronizado'}
+                </span>
               </div>
               <button 
                 onClick={handleLogout}
@@ -263,7 +304,52 @@ export default function App() {
 
         {/* Content Area */}
         <section className="flex-1 p-4 md:p-8 overflow-y-auto">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto space-y-6">
+            {realRole === 'superadmin' && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-gradient-to-r from-brand-red/10 via-brand-red/5 to-black border border-brand-red/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-brand-red/20 flex items-center justify-center text-brand-red animate-pulse">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-white">Consola de Simulación de Accesos</h4>
+                    <p className="text-[10px] text-text-muted font-semibold uppercase">
+                      Estás viendo el portal desde la perspectiva del rol: <span className="text-brand-red font-black">{(userRole || '').replace(/_/g, ' ')}</span>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black text-white/50 uppercase tracking-widest select-none hidden lg:inline">Cambiar vista rápida:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {[
+                      { id: 'superadmin', label: 'Admin', color: 'bg-brand-red' },
+                      { id: 'contador', label: 'Contador', color: 'bg-emerald-600' },
+                      { id: 'secretaria_facturista', label: 'Sec. Facturista', color: 'bg-pink-600' },
+                      { id: 'credito_cobranza', label: 'Crédito', color: 'bg-cyan-600' },
+                      { id: 'vendedor', label: 'Vendedor', color: 'bg-orange-500' },
+                      { id: 'gerente', label: 'Técnico', color: 'bg-brand-blue' }
+                    ].map((btn) => (
+                      <button
+                        key={btn.id}
+                        onClick={() => handleSimulateRole(btn.id as UserRole)}
+                        className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all border ${
+                          userRole === btn.id 
+                            ? 'bg-brand-red text-white border-brand-red shadow-lg shadow-brand-red/20' 
+                            : 'bg-interface-bg/60 text-white/70 border-white/5 hover:border-brand-red hover:text-white'
+                        }`}
+                      >
+                        {btn.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+            
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}

@@ -11,7 +11,7 @@ interface InventoryProps {
 export default function Inventory({ userRole, branchId }: InventoryProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const isSuperAdmin = userRole === 'superadmin';
-  const isGerente = userRole === 'gerente';
+  const isGerente = false;
   const hasAccessToCost = isSuperAdmin || isGerente;
   const canManagePrice = isSuperAdmin;
   const canLoadStock = isSuperAdmin || isGerente;

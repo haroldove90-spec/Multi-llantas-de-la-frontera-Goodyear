@@ -16,19 +16,29 @@ export default function Help({ userRole }: HelpProps) {
       { title: 'Usuarios', text: 'Define quién tiene acceso a cada sucursal y con qué nivel de permisos.' }
     ],
     gerente: [
-      { title: 'Técnico / Asesor', text: 'Gestiona el inventario de tu sucursal y autoriza garantías técnicas.' },
-      { title: 'Control de Traspasos', text: 'Recibe y envía mercancía entre sucursales de la frontera.' },
-      { title: 'Reportes Locales', text: 'Visualiza el desempeño diario y mensual de tu punto de venta.' }
+      { title: 'Gestión Técnica', text: 'Monitorea el estatus técnico de las llantas, daños reportados y reparaciones solicitadas.' },
+      { title: 'Inventario de Entrada', text: 'Revisa cargas y descargas de llantas por marca, rin, y especificaciones técnicas.' },
+      { title: 'Garantías y Dictámenes', text: 'Evalúa llantas defectuosas con fotos y registra el código DOT para validación de fábrica.' }
     ],
     vendedor: [
-      { title: 'Punto de Venta', text: 'Realiza ventas rápidas, aplica descuentos autorizados y genera notas.' },
-      { title: 'Consulta de Stock', text: 'Verifica disponibilidad en tiempo real tanto local como en otras sucursales.' },
-      { title: 'Cierre de Caja', text: 'Reporta tus ingresos al final del turno para conciliación contable.' }
+      { title: 'Punto de Venta (POS)', text: 'Registra ventas, cotiza llantas Goodyear, selecciona sucursal y emite notas de remisión rápidas.' },
+      { title: 'Consulta de Inventario', text: 'Consulta el stock en tiempo real de Marcas, Tamaños y Modelos en Centro, Norte y Frontera.' },
+      { title: 'Garantías Iniciales', text: 'Inicia el reporte de daño por parte del cliente capturando DOT, millaje y motivo de reclamo.' }
     ],
     contador: [
-      { title: 'Centro Fiscal', text: 'Descarga facturas, concilia impuestos y monitorea el flujo de efectivo.' },
-      { title: 'Sincronización SAT', text: 'Asegúrate de que todas las ventas estén timbradas correctamente.' },
-      { title: 'Balance de Sucursales', text: 'Genera cortes de caja consolidados para la administración matriz.' }
+      { title: 'Centro Fiscal', text: 'Accede al concentrado de facturación de toda la red de sucursales.' },
+      { title: 'Sincronización Fiscal', text: 'Monitorea el timbrado de facturas SAT, estados de cuenta y genera cortes mensuales.' },
+      { title: 'Reportes Consolidados', text: 'Exporta reportes de ventas totales agrupados por sucursal de origen.' }
+    ],
+    secretaria_facturista: [
+      { title: 'Timbrado de Facturas', text: 'Revisa las notas del Punto de Venta pendientes de facturar y timbra los CFDI ante el SAT.' },
+      { title: 'Emisión de Complementos', text: 'Genera Complementos de Recepción de Pagos (CRP) vinculados a las facturas correspondientes.' },
+      { title: 'Descarga XML y PDF', text: 'Envía representaciones impresas y archivos XML de manera masiva o individual a los correos de los clientes.' }
+    ],
+    credito_cobranza: [
+      { title: 'Aprobación de Créditos', text: 'Analiza el historial de compra y límites crediticios para clientes mayoristas y flotillas.' },
+      { title: 'Control de Saldos', text: 'Monitorea cuentas por cobrar con estatus pendiente (PPD) y concilia los depósitos recibidos.' },
+      { title: 'Reporte de Antigüedad', text: 'Monitorea la cartera vencida de las tres sucursales y genera alertas para planes de cobranza.' }
     ]
   };
 
@@ -42,7 +52,7 @@ export default function Help({ userRole }: HelpProps) {
         </div>
         <div>
           <h2 className="text-3xl font-black uppercase tracking-tight">Centro de Ayuda</h2>
-          <p className="text-text-muted font-bold text-sm tracking-widest uppercase">Manual de Usuario para {userRole?.replace('_', ' ')}</p>
+          <p className="text-text-muted font-bold text-sm tracking-widest uppercase">Manual de Usuario para {userRole?.replace(/_/g, ' ')}</p>
         </div>
       </div>
 

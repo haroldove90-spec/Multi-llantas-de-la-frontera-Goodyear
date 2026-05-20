@@ -9,7 +9,7 @@ interface TransfersProps {
 }
 
 export default function Transfers({ userRole, branchId }: TransfersProps) {
-  const isGerente = userRole === 'gerente';
+  const isGerente = false;
   const isSuperAdmin = userRole === 'superadmin';
   return (
     <div className="space-y-6">

@@ -1,7 +1,7 @@
 import React from 'react';
 import { BRANCHES, BRANCH_SUMMARIES, UserRole } from '../data/mockData';
 import { motion } from 'motion/react';
-import { Store, TrendingUp, AlertTriangle, ChevronRight, ShieldCheck, UserCog, Calculator, ShoppingBag } from 'lucide-react';
+import { Store, TrendingUp, AlertTriangle, ChevronRight, ShieldCheck, UserCog, Calculator, ShoppingBag, FileText } from 'lucide-react';
 
 interface BranchSelectorProps {
   onSelect: (branchId: string, role: UserRole) => void;
@@ -39,8 +39,9 @@ export default function BranchSelector({ onSelect }: BranchSelectorProps) {
 
   const roles: { id: UserRole; label: string; icon: any; color: string; desc: string }[] = [
     { id: 'superadmin', label: 'Administrador', icon: ShieldCheck, color: 'bg-brand-red', desc: 'Control Total y Auditoría' },
-    { id: 'gerente', label: 'Técnico / Asesor', icon: UserCog, color: 'bg-brand-blue', desc: 'Gestión Técnica e Inventario' },
     { id: 'contador', label: 'Contador', icon: Calculator, color: 'bg-emerald-600', desc: 'Reportes y Centro Fiscal' },
+    { id: 'secretaria_facturista', label: 'Sec. Facturista', icon: FileText, color: 'bg-pink-600', desc: 'Facturación y SAT' },
+    { id: 'credito_cobranza', label: 'Crédito y Cobro', icon: TrendingUp, color: 'bg-cyan-600', desc: 'Créditos y Cuentas' },
     { id: 'vendedor', label: 'Vendedor', icon: ShoppingBag, color: 'bg-orange-500', desc: 'Punto de Venta y Cotización' },
   ];
 

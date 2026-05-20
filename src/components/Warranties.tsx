@@ -9,7 +9,7 @@ interface WarrantiesProps {
 }
 
 export default function Warranties({ userRole, branchId }: WarrantiesProps) {
-  const isGerente = userRole === 'gerente';
+  const isGerente = false;
   const isSuperAdmin = userRole === 'superadmin';
   return (
     <div className="space-y-6">
