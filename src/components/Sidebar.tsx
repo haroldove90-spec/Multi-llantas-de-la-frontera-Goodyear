@@ -39,7 +39,7 @@ export const navItems = [
   { id: 'transfers', label: 'Traspasos', icon: Truck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'warranties', label: 'Garantías', icon: ShieldCheck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'reports', label: 'Reportes', icon: FileText, roles: ['superadmin', 'contador'] },
-  { id: 'fiscal', label: 'Facturación / CFDI', icon: FileText, roles: ['secretaria_facturista'] },
+  { id: 'fiscal', label: 'Facturación / CFDI', icon: FileText, roles: ['secretaria_facturista', 'credito_cobranza'] },
   { id: 'credits_center', label: 'Créditos', icon: CreditCard, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza'] },
   { id: 'accounts_payable', label: 'Cuentas x Pagar', icon: HandCoins, roles: ['superadmin', 'contador', 'secretaria_facturista'] },
   { id: 'sales', label: 'Cotizaciones', icon: ShoppingCart, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
@@ -86,6 +86,28 @@ export const getDynamicLabel = (itemId: string, role: UserRole | null): string =
       case 'fiscal': return 'Facturacion';
       case 'credits_center': return 'Créditos ( Solo sucursale )';
       case 'accounts_payable': return 'Cuentas por pagar';
+      case 'sales': return 'Cotizaciones';
+      case 'customization': return 'Preferencias';
+      case 'help': return 'Ayuda';
+    }
+  } else if (role === 'credito_cobranza') {
+    switch (itemId) {
+      case 'inventory': return 'Inventarios maestro';
+      case 'orders_credits': return 'Apartado, pedidos, créditos,';
+      case 'clients_notes': return 'Registro de clientes';
+      case 'transfers': return 'Traspasos tiempo real';
+      case 'warranties': return 'Garantias';
+      case 'fiscal': return 'Facturacion';
+      case 'sales': return 'Cotizaciones';
+      case 'customization': return 'Preferencias';
+      case 'help': return 'Ayuda';
+    }
+  } else if (role === 'vendedor') {
+    switch (itemId) {
+      case 'inventory': return 'Inventario maestro';
+      case 'clients_notes': return 'Registro de clientes';
+      case 'transfers': return 'Traspasos tiempo real';
+      case 'warranties': return 'Garantias';
       case 'sales': return 'Cotizaciones';
       case 'customization': return 'Preferencias';
       case 'help': return 'Ayuda';
@@ -157,23 +179,23 @@ export const getOrderedNavItems = (role: UserRole | null) => {
     ];
   } else if (role === 'vendedor') {
     idsOrder = [
-      'sales',
-      'orders_credits',
       'inventory',
       'clients_notes',
       'transfers',
       'warranties',
+      'sales',
       'customization',
       'help'
     ];
   } else if (role === 'credito_cobranza') {
     idsOrder = [
-      'orders_credits',
       'inventory',
+      'orders_credits',
       'clients_notes',
       'transfers',
       'warranties',
-      'credits_center',
+      'fiscal',
+      'sales',
       'customization',
       'help'
     ];
