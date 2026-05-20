@@ -32,20 +32,67 @@ interface SidebarProps {
 }
 
 export const navItems = [
-  { id: 'dashboard', label: 'Métricas y Reportes', icon: LayoutDashboard, roles: ['superadmin', 'contador'] },
+  { id: 'dashboard', label: 'Métricas', icon: LayoutDashboard, roles: ['superadmin'] },
+  { id: 'orders_credits', label: 'Pedidos y Cortes', icon: Coins, roles: ['contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'inventory', label: 'Inventario Maestro', icon: Package, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
-  { id: 'sales', label: 'Cotizaciones', icon: ShoppingCart, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'clients_notes', label: 'Clientes y Notas', icon: Users, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
-  { id: 'orders_credits', label: 'Pedidos y Cortes', icon: Coins, roles: ['contador', 'secretaria_facturista', 'credito_cobranza'] },
   { id: 'transfers', label: 'Traspasos', icon: Truck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'warranties', label: 'Garantías', icon: ShieldCheck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
-  { id: 'fiscal', label: 'Facturación / CFDI', icon: FileText, roles: ['contador', 'secretaria_facturista', 'credito_cobranza'] },
+  { id: 'reports', label: 'Reportes', icon: FileText, roles: ['superadmin', 'contador'] },
   { id: 'credits_center', label: 'Créditos', icon: CreditCard, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza'] },
   { id: 'accounts_payable', label: 'Cuentas x Pagar', icon: HandCoins, roles: ['superadmin', 'contador'] },
-  { id: 'branches', label: 'Sucursales', icon: Store, roles: ['superadmin'] },
-  { id: 'customization', label: 'Configuración', icon: Settings, roles: ['superadmin'] },
+  { id: 'sales', label: 'Cotizaciones', icon: ShoppingCart, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
+  { id: 'customization', label: 'Preferencias', icon: Settings, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'help', label: 'Ayuda', icon: HelpCircle, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
 ];
+
+export const getDynamicLabel = (itemId: string, role: UserRole | null): string => {
+  if (role === 'superadmin') {
+    switch (itemId) {
+      case 'dashboard': return 'Métricas';
+      case 'inventory': return 'Inventarios maestro';
+      case 'clients_notes': return 'Registro de clientes';
+      case 'transfers': return 'Traspasos tiempo real';
+      case 'warranties': return 'Garantias';
+      case 'reports': return 'Reportes';
+      case 'credits_center': return 'Créditos ( Todas las sucursales )';
+      case 'accounts_payable': return 'Cuentas por pagar ( Proveedores )';
+      case 'sales': return 'Cotizaciones';
+      case 'customization': return 'Preferencias';
+      case 'help': return 'Ayuda';
+    }
+  } else if (role === 'contador') {
+    switch (itemId) {
+      case 'orders_credits': return 'Apartado, pedidos, créditos,';
+      case 'inventory': return 'Inventarios maestro';
+      case 'clients_notes': return 'Registro de clientes';
+      case 'transfers': return 'Traspasos tiempo real';
+      case 'warranties': return 'Garantias';
+      case 'reports': return 'Reportes';
+      case 'credits_center': return 'Créditos ( Solo su sucursal )';
+      case 'accounts_payable': return 'Cuentas por pagar';
+      case 'sales': return 'Cotizaciones';
+      case 'customization': return 'Preferencias';
+      case 'help': return 'Ayuda';
+    }
+  } else {
+    switch (itemId) {
+      case 'dashboard': return 'Métricas';
+      case 'orders_credits': return 'Punto de Venta';
+      case 'inventory': return 'Inventario Maestro';
+      case 'clients_notes': return 'Registro de clientes y notas';
+      case 'transfers': return 'Traspasos tiempo real';
+      case 'warranties': return 'Garantias';
+      case 'reports': return 'Reportes';
+      case 'credits_center': return 'Créditos ( solo su sucursal )';
+      case 'accounts_payable': return 'Cuentas por pagar';
+      case 'sales': return 'Cotizaciones';
+      case 'customization': return 'Preferencias';
+      case 'help': return 'Ayuda';
+    }
+  }
+  return '';
+};
 
 export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onClose, onLogout, realRole, onSimulateRole }: SidebarProps) {
   const filteredNavItems = navItems.filter(item => userRole && item.roles.includes(userRole));
@@ -187,7 +234,7 @@ export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onC
               }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-text-muted group-hover:text-white'}`} />
-              <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
+              <span className="text-xs font-black uppercase tracking-widest">{getDynamicLabel(item.id, userRole)}</span>
               {isActive && (
                 <motion.div 
                   layoutId="sidebarActive"

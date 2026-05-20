@@ -15,6 +15,7 @@ import ClientsNotes from './components/ClientsNotes';
 import OrdersCredits from './components/OrdersCredits';
 import CreditsCenter from './components/CreditsCenter';
 import AccountsPayable from './components/AccountsPayable';
+import ReportsStatistics from './components/ReportsStatistics';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight, Menu, ShieldCheck } from 'lucide-react';
 import { BRANCHES, UserRole } from './data/mockData';
@@ -126,6 +127,18 @@ export default function App() {
     };
   }, []);
 
+  // Active tab safety redirect
+  useEffect(() => {
+    if (userRole) {
+      const allowedItems = navItems.filter(item => item.roles.includes(userRole));
+      const isAllowed = allowedItems.some(item => item.id === activeTab);
+      if (!isAllowed && allowedItems.length > 0) {
+        setActiveTab(allowedItems[0].id);
+        localStorage.setItem('erp_active_tab', allowedItems[0].id);
+      }
+    }
+  }, [userRole, activeTab]);
+
   const selectedBranch = selectedBranchId === 'all' 
     ? { name: 'Corporativo Global', id: 'all' } 
     : BRANCHES.find(b => b.id === selectedBranchId);
@@ -145,8 +158,15 @@ export default function App() {
     }
     
     let initialTab = 'dashboard';
-    if (role === 'vendedor' || role === 'contador') {
-      initialTab = role === 'vendedor' ? 'sales' : 'fiscal';
+    if (role !== 'superadmin') {
+      if (role === 'vendedor') {
+        initialTab = 'sales';
+      } else if (role === 'contador') {
+        initialTab = 'orders_credits';
+      } else {
+        const allowedItems = navItems.filter(item => item.roles.includes(role));
+        initialTab = allowedItems.length > 0 ? allowedItems[0].id : 'inventory';
+      }
     }
     setActiveTab(initialTab);
     localStorage.setItem('erp_active_tab', initialTab);
@@ -202,6 +222,8 @@ export default function App() {
         return <Warranties userRole={userRole} branchId={selectedBranchId} />;
       case 'fiscal':
         return <FiscalCenter userRole={userRole} branchId={selectedBranchId} />;
+      case 'reports':
+        return <ReportsStatistics userRole={userRole} branchId={selectedBranchId} />;
       case 'credits_center':
         return <CreditsCenter userRole={userRole} branchId={selectedBranchId} />;
       case 'accounts_payable':
