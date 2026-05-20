@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { USERS, UserRole, BRANCHES } from '../data/mockData';
 import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
-import { ShieldCheck, Mail, Lock, LogIn, ChevronRight, AlertCircle, KeyRound, Sparkles } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, LogIn, ChevronRight, AlertCircle, KeyRound, Sparkles, Eye, EyeOff } from 'lucide-react';
 
 interface LoginFormProps {
   onLoginSuccess: (name: string, email: string, role: UserRole, branchId: string) => void;
@@ -11,6 +11,7 @@ interface LoginFormProps {
 export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showHelper, setShowHelper] = useState(false);
@@ -181,14 +182,26 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
               </div>
               <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
                   required
-                  className="w-full bg-black/60 border border-zinc-800 focus:border-brand-red text-white text-xs py-3.5 pl-10 pr-4 rounded-2xl outline-none transition-all focus:shadow-[0_0_15px_rgba(255,0,0,0.15)] placeholder:text-zinc-600 font-semibold"
+                  className="w-full bg-black/60 border border-zinc-800 focus:border-brand-red text-white text-xs py-3.5 pl-10 pr-12 rounded-2xl outline-none transition-all focus:shadow-[0_0_15px_rgba(255,0,0,0.15)] placeholder:text-zinc-600 font-semibold"
                 />
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-600" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-white transition-colors focus:outline-none cursor-pointer"
+                  title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
             </div>
 

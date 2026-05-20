@@ -203,8 +203,18 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 -- ====================================================================
--- INSERTAR LOS 8 USUARIOS SOLICITADOS CON SUS RESPECTIVOS ROLES
+-- INSERTAR LOS 8 USUARIOS SOLICITADOS CON SUS RESPECTIVOS ROLES Y NUEVO ACCESO ADMIN
 -- ====================================================================
+
+-- 0. Harold Anguiano (Rol: Administrador / Corporativo Global)
+SELECT public.create_erp_user(
+  'e04f0d3a-0e9e-4c78-9844-4861e6871a93'::UUID,
+  'Harold Anguiano',
+  'harold_anguiano@multillanta.com',
+  '123_harold',
+  'superadmin',
+  NULL -- Acceso global multicentro
+);
 
 -- 1. Manuel Esparza (Rol: Administrador / Corporativo)
 SELECT public.create_erp_user(

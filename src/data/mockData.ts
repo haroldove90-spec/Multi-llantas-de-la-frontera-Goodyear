@@ -18,6 +18,8 @@ export interface User {
 }
 
 export const USERS: User[] = [
+  { id: 'u0', name: 'Harold Anguiano', role: 'superadmin', branchId: 'all', email: 'harold_anguiano@multillanta.com', password: '123_harold' },
+  { id: 'u0_alt', name: 'Harold Anguiano', role: 'superadmin', branchId: 'all', email: 'harold_anguiano@multillantas.com', password: '123_harold' },
   { id: 'u1', name: 'Manuel Esparza', role: 'superadmin', branchId: 'all', email: 'manuel_esparza@multillantas.com', password: '123_esparza' },
   { id: 'u2_1', name: 'Manuel Villaseñor', role: 'vendedor', branchId: 'norte', email: 'manuel_villasenor@multillantas.com', password: '123_vendedor' },
   { id: 'u2_2', name: 'Manuel Villaseñor', role: 'vendedor', branchId: 'norte', email: 'manuel:villasenor@multillantas.com', password: '123_vendedor' }, // support literal colon typo from prompt
