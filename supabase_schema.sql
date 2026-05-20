@@ -246,16 +246,6 @@ SELECT public.create_erp_user(
   'matriz'
 );
 
--- Support spacer format too
-SELECT public.create_erp_user(
-  '4e3a890a-24cd-4b13-9111-96850cd0ea9b'::UUID,
-  'Liliana Medina (Space)',
-  'liliana_medina@multillantas.com',
-  '123_ contador',
-  'contador',
-  'matriz'
-) ON CONFLICT DO NOTHING;
-
 -- 4. Mario Vargas (Rol: Vendedor / Sucursal Helios)
 SELECT public.create_erp_user(
   'b0af7d6b-07b9-44be-99bb-9fd0b1f28b5e'::UUID,
