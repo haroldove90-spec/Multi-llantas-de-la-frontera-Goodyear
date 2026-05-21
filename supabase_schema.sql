@@ -156,8 +156,11 @@ CREATE TABLE IF NOT EXISTS public.warranties (
 CREATE TABLE IF NOT EXISTS public.app_config (
   id TEXT PRIMARY KEY DEFAULT 'global',
   theme JSONB NOT NULL,
+  exchange_rate DECIMAL(10, 2) DEFAULT 18.50, -- Tipo de Cambio USD a MXN
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.app_config ADD COLUMN IF NOT EXISTS exchange_rate DECIMAL(10, 2) DEFAULT 18.50;
 
 
 

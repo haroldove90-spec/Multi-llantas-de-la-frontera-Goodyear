@@ -31,6 +31,7 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
   const [isSimulatingUpload, setIsSimulatingUpload] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStepDesc, setUploadStepDesc] = useState('');
+  const [imageTab, setImageTab] = useState<'upload' | 'link'>('upload');
 
   // Modal / Form state for Category management
   const [showCategoriesModal, setShowCategoriesModal] = useState(false);
@@ -106,10 +107,20 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
   };
 
   // Simulated file upload mechanism
-  const simulateImageUpload = () => {
+  const simulateImageUpload = (fileObj?: File) => {
     setIsSimulatingUpload(true);
     setUploadProgress(0);
     setUploadStepDesc('Estableciendo conexión segura con Supabase Storage...');
+
+    // If a real file was provided, prepare reading it
+    let fileUrl = '';
+    if (fileObj) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        fileUrl = reader.result as string;
+      };
+      reader.readAsDataURL(fileObj);
+    }
 
     const tireImages = [
       'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&auto=format&fit=crop&q=60',
@@ -126,7 +137,7 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
           clearInterval(interval);
           setTimeout(() => {
             setIsSimulatingUpload(false);
-            setFormData(f => ({ ...f, imageUrl: randomTireImage }));
+            setFormData(f => ({ ...f, imageUrl: fileUrl || randomTireImage }));
           }, 300);
           return 100;
         }
@@ -1137,58 +1148,137 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
 
                     {/* Section 4: Image Picker and Simulator */}
                     <div className="space-y-4">
-                      <div className="flex items-center gap-2 border-l-2 border-brand-red pl-3 text-xs font-black uppercase text-[#ffb700] tracking-widest">
-                        <span>4. IMAGEN ILUSTRATIVA DEL PRODUCTO</span>
+                      <div className="flex items-center justify-between border-l-2 border-brand-red pl-3">
+                        <span className="text-xs font-black uppercase text-[#ffb700] tracking-widest">4. IMAGEN ILUSTRATIVA DEL PRODUCTO</span>
+                        <div className="flex bg-black rounded-lg p-0.5 border border-zinc-900">
+                          <button
+                            type="button"
+                            onClick={() => setImageTab('upload')}
+                            className={`px-3 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                              imageTab === 'upload' ? 'bg-[#ffb700] text-black font-black' : 'text-zinc-500 hover:text-white'
+                            }`}
+                          >
+                            Subir Imagen
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setImageTab('link')}
+                            className={`px-3 py-1 rounded text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                              imageTab === 'link' ? 'bg-[#ffb700] text-black font-black' : 'text-zinc-500 hover:text-white'
+                            }`}
+                          >
+                            Pegar Enlace
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="p-5 bg-black/30 rounded-3xl border border-zinc-850 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                        <div className="space-y-2 col-span-2">
-                          <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider block">Foto del Neumático (URL directa o Simulación de Archivo)</label>
-                          <input 
-                            type="text" 
-                            placeholder="Pega URL directa de la imagen (o usa el simulador de arriba)"
-                            value={formData.imageUrl}
-                            onChange={(e) => setFormData(v => ({ ...v, imageUrl: e.target.value }))}
-                            className="w-full text-xs p-3.5 bg-zinc-950 border border-zinc-900 rounded-2xl outline-none focus:border-[#ffb700] font-bold text-white text-clip"
-                          />
-                          <p className="text-[9px] text-[#ffb700] font-bold uppercase leading-relaxed">
-                            💡 Si no cuentas con una URL, haz clic en el botón de la derecha para simular la subida de una foto real a Supabase Storage con compresión automática.
-                          </p>
-                        </div>
-
-                        <div className="flex flex-col items-center justify-center p-4 bg-zinc-950 rounded-2xl border border-zinc-900 min-h-24">
-                          {isSimulatingUpload ? (
-                            <div className="space-y-2 text-center w-full">
-                              <Loader2 className="w-5 h-5 text-amber-500 animate-spin mx-auto" />
-                              <div className="w-full bg-zinc-900 rounded-full h-1">
-                                <div className="bg-[#ffb700] h-1 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                      <div className="p-5 bg-black/30 rounded-3xl border border-zinc-850">
+                        {imageTab === 'upload' ? (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                            <div className="col-span-2 space-y-2">
+                              <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider block">Zona de Carga (Drag & Drop o Clic para seleccionar)</label>
+                              <div 
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                                    simulateImageUpload(e.dataTransfer.files[0]);
+                                  }
+                                }}
+                                className="border-2 border-dashed border-zinc-800 hover:border-[#ffb700] bg-zinc-950/40 p-6 rounded-2xl transition-all text-center relative group cursor-pointer"
+                                onClick={() => document.getElementById('tire-image-file-input')?.click()}
+                              >
+                                <input 
+                                  type="file" 
+                                  id="tire-image-file-input" 
+                                  accept="image/*" 
+                                  className="hidden" 
+                                  onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                      simulateImageUpload(e.target.files[0]);
+                                    }
+                                  }}
+                                />
+                                <Upload className="w-8 h-8 text-[#ffb700] mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                                <p className="text-[10px] font-black uppercase tracking-wider text-white">Arrastra aquí tu foto de llanta o haz clic</p>
+                                <p className="text-[8px] text-zinc-500 uppercase tracking-widest mt-1">Soporta PNG, JPG y WEBP (Compresión local en tiempo real)</p>
                               </div>
-                              <p className="text-[9px] font-black uppercase tracking-wider text-amber-500 leading-tight">
-                                {uploadProgress}% • {uploadStepDesc}
+                            </div>
+
+                            <div className="flex flex-col items-center justify-center p-4 bg-zinc-950 rounded-2xl border border-zinc-900 min-h-24">
+                              {isSimulatingUpload ? (
+                                <div className="space-y-2 text-center w-full">
+                                  <Loader2 className="w-5 h-5 text-amber-500 animate-spin mx-auto" />
+                                  <div className="w-full bg-zinc-900 rounded-full h-1">
+                                    <div className="bg-[#ffb700] h-1 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                                  </div>
+                                  <p className="text-[9px] font-black uppercase tracking-wider text-amber-500 leading-tight">
+                                    {uploadProgress}% • {uploadStepDesc}
+                                  </p>
+                                </div>
+                              ) : formData.imageUrl ? (
+                                <div className="text-center space-y-2">
+                                  <img src={formData.imageUrl} className="w-16 h-16 object-cover rounded-lg border border-zinc-800 mx-auto" referrerPolicy="no-referrer" />
+                                  <span className="text-[8px] bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 font-black px-1.5 py-0.5 rounded uppercase tracking-wider block">¡Cargada con Éxito!</span>
+                                  <button 
+                                    type="button"
+                                    onClick={() => setFormData(v => ({ ...v, imageUrl: '' }))} 
+                                    className="text-[8px] font-black uppercase tracking-wider text-brand-red hover:underline cursor-pointer block mx-auto mt-1"
+                                  >
+                                    Eliminar foto
+                                  </button>
+                                </div>
+                              ) : (
+                                <button 
+                                  type="button" 
+                                  onClick={() => simulateImageUpload()}
+                                  className="flex flex-col items-center gap-1.5 p-3.5 hover:bg-zinc-900 transition-all text-zinc-400 hover:text-white rounded-xl text-center cursor-pointer w-full"
+                                >
+                                  <Sparkles className="w-5 h-5 text-[#ffb700]" />
+                                  <span className="text-[9px] font-black uppercase tracking-widest">Foto de Stock (Demo)</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                            <div className="col-span-2 space-y-2">
+                              <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider block">Enlace Directo de la Imagen (URL)</label>
+                              <input 
+                                type="text" 
+                                placeholder="https://ejemplo.com/imagenes/mi-llanta.jpg"
+                                value={formData.imageUrl}
+                                onChange={(e) => setFormData(v => ({ ...v, imageUrl: e.target.value }))}
+                                className="w-full text-xs p-3.5 bg-zinc-950 border border-zinc-900 rounded-2xl outline-none focus:border-[#ffb700] font-bold text-white text-clip"
+                              />
+                              <p className="text-[9px] text-[#ffb700] font-bold uppercase leading-relaxed">
+                                💡 Introduce la dirección URL directa hacia cualquier imagen web pública. Se mostrará en tiempo real en los listados y comprobantes.
                               </p>
                             </div>
-                          ) : formData.imageUrl ? (
-                            <div className="text-center space-y-2">
-                              <img src={formData.imageUrl} className="w-16 h-16 object-cover rounded-lg border border-zinc-800 mx-auto" referrerPolicy="no-referrer" />
-                              <button 
-                                type="button"
-                                onClick={simulateImageUpload} 
-                                className="text-[8px] font-black uppercase tracking-wider text-amber-500 hover:underline cursor-pointer"
-                              >
-                                Volver a subir imagen
-                              </button>
+
+                            <div className="flex flex-col items-center justify-center p-4 bg-zinc-950 rounded-2xl border border-zinc-900 min-h-24">
+                              {formData.imageUrl ? (
+                                <div className="text-center space-y-2">
+                                  <img 
+                                    src={formData.imageUrl} 
+                                    onError={(e) => {
+                                      // Fallback on broken image link
+                                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400';
+                                    }}
+                                    className="w-16 h-16 object-cover rounded-lg border border-zinc-800 mx-auto" 
+                                    referrerPolicy="no-referrer" 
+                                  />
+                                  <span className="text-[8px] bg-sky-500/10 border border-sky-500/20 text-sky-450 font-black px-1.5 py-0.5 rounded uppercase tracking-wider block">Vista Previa Link</span>
+                                </div>
+                              ) : (
+                                <div className="text-center text-zinc-500 p-2 space-y-1">
+                                  <ImageIcon className="w-5 h-5 mx-auto opacity-40 text-white" />
+                                  <p className="text-[8px] font-bold uppercase tracking-widest leading-normal">Sin Enlace</p>
+                                </div>
+                              )}
                             </div>
-                          ) : (
-                            <button 
-                              type="button" 
-                              onClick={simulateImageUpload}
-                              className="flex flex-col items-center gap-1.5 p-3.5 hover:bg-zinc-900 transition-all text-zinc-400 hover:text-white rounded-xl text-center cursor-pointer w-full"
-                            >
-                              <Upload className="w-5 h-5 text-[#ffb700]" />
-                              <span className="text-[9px] font-black uppercase tracking-widest">Simular Subida</span>
-                            </button>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 

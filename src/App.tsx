@@ -18,7 +18,7 @@ import AccountsPayable from './components/AccountsPayable';
 import ReportsStatistics from './components/ReportsStatistics';
 import LoginForm from './components/LoginForm';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight, Menu, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight, Menu, ShieldCheck, RefreshCw, DollarSign, TrendingUp } from 'lucide-react';
 import { BRANCHES, UserRole } from './data/mockData';
 import { supabase } from './lib/supabase';
 
@@ -48,6 +48,18 @@ export default function App() {
   const [userEmail, setUserEmail] = useState<string | null>(() => localStorage.getItem('erp_user_email') || null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  
+  // Dynamic Exchange Rate state
+  const [exchangeRate, setExchangeRate] = useState<number>(() => {
+    const saved = localStorage.getItem('erp_exchange_rate');
+    return saved ? parseFloat(saved) : 18.50;
+  });
+  const [isEditingRate, setIsEditingRate] = useState(false);
+  const [rateInput, setRateInput] = useState('18.50');
+
+  useEffect(() => {
+    setRateInput(exchangeRate.toString());
+  }, [exchangeRate, isEditingRate]);
   const [theme, setTheme] = useState<any>(() => {
     const saved = localStorage.getItem('erp_theme');
     if (saved) {
@@ -79,6 +91,28 @@ export default function App() {
     localStorage.setItem('erp_theme', JSON.stringify(themeData));
   };
 
+  const applyExchangeRate = async (rateValue: number, persistToDb: boolean = true) => {
+    const cleanRate = Number(Math.max(1, rateValue).toFixed(2));
+    setExchangeRate(cleanRate);
+    localStorage.setItem('erp_exchange_rate', cleanRate.toString());
+    
+    // Notify locally in real-time
+    window.dispatchEvent(new CustomEvent('erp-exchange-rate-updated', { detail: cleanRate }));
+
+    // Persist to Supabase if requested and connected
+    if (persistToDb && supabase) {
+      try {
+        const savedTheme = localStorage.getItem('erp_theme');
+        const parsedTheme = savedTheme ? JSON.parse(savedTheme) : theme;
+        await supabase
+          .from('app_config')
+          .upsert({ id: 'global', theme: parsedTheme, exchange_rate: cleanRate });
+      } catch (err) {
+        console.error('Error persisting exchange rate to Supabase:', err);
+      }
+    }
+  };
+
   // Sync with Supabase
   useEffect(() => {
     const fetchConfig = async () => {
@@ -86,15 +120,22 @@ export default function App() {
       
       const { data, error } = await supabase
         .from('app_config')
-        .select('theme')
+        .select('theme, exchange_rate')
         .eq('id', 'global')
         .single();
       
-      if (data && data.theme) {
-        applyTheme(data.theme);
+      if (data) {
+        if (data.theme) applyTheme(data.theme);
+        if (data.exchange_rate) {
+          const rateVal = parseFloat(data.exchange_rate);
+          setExchangeRate(rateVal);
+          localStorage.setItem('erp_exchange_rate', rateVal.toString());
+          window.dispatchEvent(new CustomEvent('erp-exchange-rate-updated', { detail: rateVal }));
+        }
       } else if (error && error.code === 'PGRST116') {
-        // Table exists but record doesn't, initialize it
-        await supabase.from('app_config').upsert({ id: 'global', theme: theme });
+        const savedTheme = localStorage.getItem('erp_theme');
+        const parsedTheme = savedTheme ? JSON.parse(savedTheme) : theme;
+        await supabase.from('app_config').upsert({ id: 'global', theme: parsedTheme, exchange_rate: exchangeRate });
       }
     };
 
@@ -111,8 +152,14 @@ export default function App() {
           table: 'app_config',
           filter: 'id=eq.global'
         }, (payload: any) => {
-          if (payload.new && payload.new.theme) {
-            applyTheme(payload.new.theme);
+          if (payload.new) {
+            if (payload.new.theme) applyTheme(payload.new.theme);
+            if (payload.new.exchange_rate) {
+              const rateVal = parseFloat(payload.new.exchange_rate);
+              setExchangeRate(rateVal);
+              localStorage.setItem('erp_exchange_rate', rateVal.toString());
+              window.dispatchEvent(new CustomEvent('erp-exchange-rate-updated', { detail: rateVal }));
+            }
           }
         })
         .subscribe();
@@ -122,11 +169,23 @@ export default function App() {
       applyTheme(e.detail);
     };
 
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'erp_exchange_rate' && e.newValue) {
+        const rateVal = parseFloat(e.newValue);
+        if (!isNaN(rateVal)) {
+          setExchangeRate(rateVal);
+          window.dispatchEvent(new CustomEvent('erp-exchange-rate-updated', { detail: rateVal }));
+        }
+      }
+    };
+
     window.addEventListener('theme-update', handleThemeUpdate);
+    window.addEventListener('storage', handleStorageChange);
     
     return () => {
       if (channel) supabase.removeChannel(channel);
       window.removeEventListener('theme-update', handleThemeUpdate);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 
@@ -319,7 +378,31 @@ export default function App() {
               </div>
           </div>
           <div className="flex items-center gap-4 md:gap-6">
-            <div className="hidden sm:flex items-center gap-4 mr-4 border-r border-interface-bg pr-6">
+            {/* Widget de Tipo de Cambio usd/mxn */}
+            <div className="flex items-center gap-2 bg-neutral-950 border border-zinc-900 rounded-xl px-3 py-1.5 shadow-inner">
+              <TrendingUp className="w-3.5 h-3.5 text-[#ffb700] shrink-0" />
+              <div className="flex flex-col pt-0.5">
+                <span className="text-[7px] text-zinc-500 font-extrabold uppercase tracking-wider leading-none">Tipo de Cambio</span>
+                <span className="text-[11px] font-black text-[#ffb700] tracking-tight leading-none mt-0.5">
+                  $ {exchangeRate.toFixed(2)} MXN
+                </span>
+              </div>
+              {userRole === 'superadmin' ? (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingRate(true)}
+                  className="ml-2 bg-brand-red/10 hover:bg-brand-red border border-brand-red/30 hover:border-brand-red text-brand-red hover:text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all cursor-pointer shrink-0"
+                >
+                  Ajustar
+                </button>
+              ) : (
+                <span className="ml-2 bg-zinc-900 text-zinc-500 text-[7px] px-1.5 py-0.5 rounded font-black tracking-widest uppercase">
+                  Fis.
+                </span>
+              )}
+            </div>
+
+            <div className="hidden sm:flex items-center gap-4 mr-4 border-r border-interface-bg pr-6 border-zinc-900">
               <div className="flex flex-col items-end">
                 <span className="text-[11px] font-black text-white tracking-tight uppercase leading-none mb-1">
                   {userName}
@@ -358,6 +441,91 @@ export default function App() {
           isOpen={isNotificationsOpen} 
           onClose={() => setIsNotificationsOpen(false)} 
         />
+
+        {/* Modal para Modificar Tipo de Cambio */}
+        {isEditingRate && (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-zinc-950 border-2 border-[#ffb700] rounded-3xl p-6 max-w-sm w-full space-y-6 shadow-2xl relative"
+            >
+              <div className="text-center space-y-2">
+                <span className="p-3 bg-[#ffb700]/10 text-[#ffb700] rounded-2xl inline-block">
+                  <DollarSign className="w-6 h-6" />
+                </span>
+                <h3 className="text-md font-black uppercase text-white tracking-wider">Ajustar Tipo de Cambio</h3>
+                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wide">
+                  USD/MXN (Sincronizado con todas las sucursales y roles)
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#ffb700] font-black text-lg">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="1.00"
+                    placeholder="18.50"
+                    value={rateInput}
+                    onChange={(e) => setRateInput(e.target.value)}
+                    className="w-full bg-black border-2 border-zinc-900 rounded-2xl py-4 pl-8 pr-4 text-center text-xl text-white font-black hover:border-zinc-800 focus:border-[#ffb700] outline-none transition-all"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 font-bold text-xs">MXN</span>
+                </div>
+
+                {/* Accesos rápidos de cambio */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { label: '-0.10', action: () => setRateInput(prev => (Math.max(1, (parseFloat(prev) || 18.5) - 0.1)).toFixed(2)) },
+                    { label: '+0.10', action: () => setRateInput(prev => ((parseFloat(prev) || 18.5) + 0.1).toFixed(2)) },
+                    { label: '18.00', action: () => setRateInput('18.00') },
+                    { label: '19.00', action: () => setRateInput('19.00') }
+                  ].map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={preset.action}
+                      className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-black text-[10px] py-2 px-1 rounded-xl transition-all border border-zinc-800 cursor-pointer"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-[#ffb700]/5 p-3 rounded-2xl border border-[#ffb700]/10 text-center">
+                <p className="text-[9px] text-[#ffb700] font-semibold uppercase leading-normal">
+                  🚀 Al modificar el valor del tipo de cambio, los precios, prospecciones y cotizaciones se sincronizarán en tiempo real para todos los roles.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingRate(false)}
+                  className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 font-bold text-xs uppercase tracking-widest rounded-2xl transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const val = parseFloat(rateInput);
+                    if (!isNaN(val) && val > 0) {
+                      applyExchangeRate(val, true);
+                    }
+                    setIsEditingRate(false);
+                  }}
+                  className="w-full py-3 bg-[#ffb700] hover:bg-amber-500 text-black font-black text-xs uppercase tracking-widest rounded-2xl transition-all cursor-pointer"
+                >
+                  Guardar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
 
         {/* Content Area */}
         <section className="flex-1 p-4 md:p-8 overflow-y-auto">

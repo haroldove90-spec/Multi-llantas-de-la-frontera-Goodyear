@@ -49,6 +49,24 @@ interface Quote {
 export default function Sales({ userRole, branchId }: SalesProps) {
   const isVendedor = userRole === 'vendedor';
 
+  // Load current exchange rate from localStorage and listen to real-time sync event
+  const [exchangeRate, setExchangeRate] = useState<number>(() => {
+    const saved = localStorage.getItem('erp_exchange_rate');
+    return saved ? parseFloat(saved) : 18.50;
+  });
+
+  React.useEffect(() => {
+    const handleSyncRate = (e: any) => {
+      if (e.detail) {
+        setExchangeRate(e.detail);
+      }
+    };
+    window.addEventListener('erp-exchange-rate-updated', handleSyncRate);
+    return () => {
+      window.removeEventListener('erp-exchange-rate-updated', handleSyncRate);
+    };
+  }, []);
+
   // Quotations List State
   const [quotesList, setQuotesList] = useState<Quote[]>([
     {
@@ -354,7 +372,10 @@ export default function Sales({ userRole, branchId }: SalesProps) {
                   </div>
                   <div className="border-t border-white/10 pt-2 flex justify-between items-center text-sm font-black text-white uppercase tracking-wider">
                     <span>Presupuesto Total Estimado:</span>
-                    <span className="text-emerald-400 font-mono text-base">${quoteTotal.toLocaleString()} MXN</span>
+                    <div className="flex flex-col items-end">
+                      <span className="text-[#ffb700] font-mono text-base">${quoteTotal.toLocaleString()} MXN</span>
+                      <span className="text-zinc-500 font-mono text-[10px] font-black tracking-widest uppercase mt-0.5">Equiv. ${(quoteTotal / exchangeRate).toFixed(2)} USD</span>
+                    </div>
                   </div>
                 </div>
 
@@ -442,7 +463,10 @@ export default function Sales({ userRole, branchId }: SalesProps) {
                 </div>
                 <div className="border-t pt-2 flex justify-between items-center text-sm font-black text-gray-900">
                   <span>TOTAL NETO COTIZADO:</span>
-                  <span className="text-emerald-700 font-mono text-base">${selectedQuoteForPrint.total.toLocaleString()} MXN</span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-emerald-700 font-mono text-base">${selectedQuoteForPrint.total.toLocaleString()} MXN</span>
+                    <span className="text-gray-500 font-mono text-[9px] font-bold uppercase mt-0.5">Equiv: ${(selectedQuoteForPrint.total / exchangeRate).toFixed(2)} USD (T.C. {exchangeRate.toFixed(2)})</span>
+                  </div>
                 </div>
               </div>
 
