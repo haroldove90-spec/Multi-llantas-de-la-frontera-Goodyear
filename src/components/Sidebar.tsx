@@ -108,7 +108,7 @@ export const getDynamicLabel = (itemId: string, role: UserRole | null): string =
       case 'clients_notes': return 'Registro de clientes';
       case 'transfers': return 'Traspasos tiempo real';
       case 'warranties': return 'Garantias';
-      case 'sales': return 'Cotizaciones';
+      case 'sales': return 'Ventas, POS y Cotiz.';
       case 'customization': return 'Preferencias';
       case 'help': return 'Ayuda';
     }
