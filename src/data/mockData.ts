@@ -51,6 +51,8 @@ export interface Tire {
   id: string;
   brand: string;
   model: string;
+  name?: string; // Nombre del producto
+  description?: string; // Descripción
   width: number;
   profile: number;
   rim: number;
@@ -59,6 +61,10 @@ export interface Tire {
   type: 'AT' | 'HT' | 'MT';
   price: number;
   cost: number;
+  price1?: number; // Precio 1
+  price2?: number; // Precio 2
+  priceReseller?: number; // Precio revendedor
+  imageUrl?: string; // Imagen del producto (simulado por el momento)
   stock: Record<string, number>; // branchId -> quantity
   lastMovement: string; // ISO Date for rotation analysis
 }
@@ -159,39 +165,82 @@ export const TIRES: Tire[] = [
   {
     id: '1', brand: 'Michelin', model: 'Pilot Sport 4', width: 225, profile: 45, rim: 17,
     loadIndex: '94', speedRating: 'Y', type: 'HT', price: 4850, cost: 3100,
+    price1: 4600, price2: 4400, priceReseller: 4125,
+    imageUrl: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 24, norte: 12, sur: 45 }, lastMovement: '2024-05-13',
   },
   {
     id: '2', brand: 'Michelin', model: 'Defender LTX M/S', width: 265, profile: 70, rim: 17,
     loadIndex: '115', speedRating: 'T', type: 'HT', price: 5200, cost: 3600,
+    price1: 4940, price2: 4680, priceReseller: 4420,
+    imageUrl: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 15, norte: 15, sur: 8 }, lastMovement: '2024-05-12',
   },
   {
     id: '3', brand: 'BFGoodrich', model: 'All-Terrain KO2', width: 285, profile: 75, rim: 16,
     loadIndex: '121', speedRating: 'R', type: 'AT', price: 6100, cost: 4400,
+    price1: 5795, price2: 5490, priceReseller: 5185,
+    imageUrl: 'https://images.unsplash.com/photo-1616422285623-13ff0162193c?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 30, norte: 25, sur: 20 }, lastMovement: '2024-05-13',
   },
   {
     id: '4', brand: 'BFGoodrich', model: 'Mud-Terrain KM3', width: 315, profile: 70, rim: 17,
     loadIndex: '121', speedRating: 'Q', type: 'MT', price: 7200, cost: 5100,
+    price1: 6840, price2: 6480, priceReseller: 6120,
+    imageUrl: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 5, norte: 5, sur: 30 }, lastMovement: '2024-05-09',
   },
   {
     id: '5', brand: 'Michelin', model: 'Primacy 4', width: 205, profile: 55, rim: 16,
     loadIndex: '91', speedRating: 'V', type: 'HT', price: 3100, cost: 2100,
+    price1: 2945, price2: 2790, priceReseller: 2635,
+    imageUrl: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 5, norte: 18, sur: 12 }, lastMovement: '2024-05-13',
   },
   {
     id: '6', brand: 'Michelin', model: 'Ltx Trail', width: 265, profile: 65, rim: 17,
     loadIndex: '112', speedRating: 'H', type: 'AT', price: 4300, cost: 2950,
+    price1: 4085, price2: 3870, priceReseller: 3655,
+    imageUrl: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 12, norte: 12, sur: 15 }, lastMovement: '2024-04-15',
   },
   {
     id: '7', brand: 'BFGoodrich', model: 'Advantage Control', width: 215, profile: 55, rim: 17,
     loadIndex: '94', speedRating: 'V', type: 'HT', price: 3400, cost: 2100,
+    price1: 3230, price2: 3060, priceReseller: 2890,
+    imageUrl: 'https://images.unsplash.com/photo-1616422285623-13ff0162193c?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 20, norte: 8, sur: 10 }, lastMovement: '2024-05-10',
   },
 ];
+
+// load from storage at initialization
+const loadPersistedTires = () => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('erp_tires');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          TIRES.length = 0;
+          TIRES.push(...parsed);
+        }
+      } catch (e) {
+        console.error('Failed to load persisted tires:', e);
+      }
+    }
+  }
+};
+loadPersistedTires();
+
+export const updateTiresStorage = (newTires: Tire[]) => {
+  TIRES.length = 0;
+  TIRES.push(...newTires);
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('erp_tires', JSON.stringify(TIRES));
+    // Dispatch a custom event to notify other mounted components in the tab
+    window.dispatchEvent(new CustomEvent('erp-tires-updated', { detail: TIRES }));
+  }
+};
 
 export const TRANSFERS: Transfer[] = [
   {

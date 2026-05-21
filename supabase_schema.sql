@@ -59,9 +59,23 @@ CREATE TABLE IF NOT EXISTS public.tires (
   type TEXT CHECK (type IN ('AT', 'HT', 'MT')),
   price DECIMAL(10, 2) NOT NULL,
   cost DECIMAL(10, 2) NOT NULL,
+  price1 DECIMAL(10, 2), -- Precio 1
+  price2 DECIMAL(10, 2), -- Precio 2
+  price_reseller DECIMAL(10, 2), -- Precio revendedor
+  image_url TEXT, -- URL/Simulación de imagen
+  name TEXT, -- Nombre del producto
+  description TEXT, -- Descripción
   last_movement TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- MIGRACIÓN INDEPENDIENTE PARA AGREGAR COLUMNAS EN BASE DE DATOS ACTIVA
+ALTER TABLE public.tires ADD COLUMN IF NOT EXISTS price1 DECIMAL(10, 2);
+ALTER TABLE public.tires ADD COLUMN IF NOT EXISTS price2 DECIMAL(10, 2);
+ALTER TABLE public.tires ADD COLUMN IF NOT EXISTS price_reseller DECIMAL(10, 2);
+ALTER TABLE public.tires ADD COLUMN IF NOT EXISTS image_url TEXT;
+ALTER TABLE public.tires ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE public.tires ADD COLUMN IF NOT EXISTS description TEXT;
 
 -- 3. Tabla Secundaria de Existencias de Llantas por Sucursal
 CREATE TABLE IF NOT EXISTS public.stocks (
