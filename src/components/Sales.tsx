@@ -299,8 +299,35 @@ export default function Sales({ userRole, branchId }: SalesProps) {
   });
 
   useEffect(() => {
-    localStorage.setItem('erp_sales_notes', JSON.stringify(salesNotes));
+    const savedString = localStorage.getItem('erp_sales_notes');
+    const stateString = JSON.stringify(salesNotes);
+    if (savedString !== stateString) {
+      localStorage.setItem('erp_sales_notes', stateString);
+    }
   }, [salesNotes]);
+
+  useEffect(() => {
+    const handleSyncNotes = (e: any) => {
+      if (e.detail) {
+        setSalesNotes(e.detail);
+      } else {
+        const saved = localStorage.getItem('erp_sales_notes');
+        if (saved) {
+          try {
+            setSalesNotes(JSON.parse(saved));
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      }
+    };
+    window.addEventListener('erp_sales_notes_updated', handleSyncNotes);
+    window.addEventListener('storage', handleSyncNotes);
+    return () => {
+      window.removeEventListener('erp_sales_notes_updated', handleSyncNotes);
+      window.removeEventListener('storage', handleSyncNotes);
+    };
+  }, []);
 
   // Filters for History Tab
   const [historySearch, setHistorySearch] = useState('');
