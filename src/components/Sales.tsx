@@ -107,7 +107,7 @@ export interface ClientFollowUp {
 }
 
 // Initial mock sales notes
-const INITIAL_SALE_NOTES: SaleNote[] = [
+export const INITIAL_SALE_NOTES: SaleNote[] = [
   {
     id: 'NV-281',
     clientName: 'Roberto Medina Torres',
@@ -255,6 +255,8 @@ const INITIAL_FOLLOW_UPS: ClientFollowUp[] = [
 ];
 
 export default function Sales({ userRole, branchId }: SalesProps) {
+  const activeBranch = !branchId || branchId === 'all' ? 'matriz' : branchId;
+
   // Navigation tabs of the console
   const [activeTabLabel, setActiveTabLabel] = useState<'pos' | 'history' | 'quotes' | 'followup'>('pos');
 
@@ -405,9 +407,6 @@ export default function Sales({ userRole, branchId }: SalesProps) {
 
   const [selectedQuoteForPrint, setSelectedQuoteForPrint] = useState<Quote | null>(null);
 
-  // DOT Validation variables
-  const [dotWarning, setDotWarning] = useState<string | null>(null);
-
   // Tire Selector catalog filters
   const filteredTires = TIRES.filter(t => 
     t.brand.toLowerCase().includes(posSearchTerm.toLowerCase()) || 
@@ -467,11 +466,6 @@ export default function Sales({ userRole, branchId }: SalesProps) {
       return;
     }
 
-    if (!posClientInfo.dotCode) {
-      setDotWarning('Ingrese el código DOT oficial del lote de llantas para garantizar la NOM-086.');
-      return;
-    }
-
     // Determine status & paid allocation
     let finalStatus: SaleNote['status'] = 'Pagado';
     let paidAmount = posTotalNet;
@@ -505,8 +499,8 @@ export default function Sales({ userRole, branchId }: SalesProps) {
       creditInstallmentsPaid: paymentType === 'Crédito' ? 0 : undefined,
       amountPaidSoFar: paidAmount,
       status: finalStatus,
-      dotCode: posClientInfo.dotCode.toUpperCase(),
-      branchId: branchId || 'matriz',
+      dotCode: 'N/A',
+      branchId: activeBranch,
       notes: posClientInfo.notes
     };
 
@@ -541,7 +535,6 @@ export default function Sales({ userRole, branchId }: SalesProps) {
       dotCode: '',
       notes: ''
     });
-    setDotWarning(null);
   };
 
   // Layaway payment registry
@@ -665,7 +658,7 @@ export default function Sales({ userRole, branchId }: SalesProps) {
       tax: qTax,
       total: qTotal,
       status: 'Vigente',
-      branchId: branchId || 'matriz'
+      branchId: activeBranch
     };
 
     setQuotesList([newQuote, ...quotesList]);
@@ -729,7 +722,7 @@ export default function Sales({ userRole, branchId }: SalesProps) {
             MULTILLANTAS - PORTAL DE VENTAS
           </h2>
           <p className="text-text-muted text-xs font-black uppercase tracking-widest mt-1">
-            Sucursal Seleccionada: <span className="text-[#ffb700]">{BRANCHES.find(b => b.id === (branchId || 'matriz'))?.name || 'Frontera Centro'}</span> • Monitoreo de Transacciones y Semáforos
+            Sucursal Seleccionada: <span className="text-[#ffb700]">{BRANCHES.find(b => b.id === activeBranch)?.name || 'Frontera Centro'}</span> • Monitoreo de Transacciones y Semáforos
           </p>
         </div>
         <div className="flex bg-zinc-950 p-1.5 rounded-2xl border border-zinc-800 text-[10px] uppercase font-black tracking-widest gap-2">
@@ -795,7 +788,7 @@ export default function Sales({ userRole, branchId }: SalesProps) {
             {/* Tires grid scroll */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[460px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-805">
               {filteredTires.map(tire => {
-                const stockVal = tire.stock[branchId || 'matriz'] || 0;
+                const stockVal = tire.stock[activeBranch] || 0;
                 return (
                   <div 
                     key={tire.id} 
@@ -925,28 +918,7 @@ export default function Sales({ userRole, branchId }: SalesProps) {
                     />
                   </div>
 
-                  {/* DOT Code validator */}
-                  <div className="p-3 bg-brand-red/5 rounded-xl border border-brand-red/20">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-[9px] font-black text-brand-red uppercase tracking-wider">Código DOT del Lote (NOM-086) *</span>
-                      <span className="text-[8px] bg-brand-red text-white font-black px-1 rounded uppercase">Obligatorio</span>
-                    </div>
-                    <input
-                      type="text" required
-                      placeholder="Ej. DOT 1426 Michelin Sport"
-                      value={posClientInfo.dotCode}
-                      onChange={(e) => {
-                        setPosClientInfo({ ...posClientInfo, dotCode: e.target.value });
-                        if (e.target.value.length >= 8) setDotWarning(null);
-                      }}
-                      className="w-full bg-black border border-zinc-800 rounded-lg py-2 px-3 text-xs font-mono text-[#ffb700] uppercase outline-none focus:border-brand-red"
-                    />
-                    {dotWarning && (
-                      <p className="text-[8px] text-brand-red font-black mt-1 uppercase flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> {dotWarning}
-                      </p>
-                    )}
-                  </div>
+
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>

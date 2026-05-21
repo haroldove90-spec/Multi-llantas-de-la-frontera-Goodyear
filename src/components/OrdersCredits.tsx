@@ -147,14 +147,6 @@ export default function OrdersCredits({ userRole, branchId }: OrdersCreditsProps
 
   const handleCreateSale = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSale.dotCode) {
-      setDotError('El código DOT es estrictamente requerido.');
-      return;
-    }
-    if (newSale.dotCode.length < 8) {
-      setDotError('Formato DOT inválido. Ingrese una nomenclatura válida de planta.');
-      return;
-    }
 
     const totalCalculated = newSale.quantity * newSale.priceEach;
     const item: Sale = {
@@ -166,7 +158,7 @@ export default function OrdersCredits({ userRole, branchId }: OrdersCreditsProps
       total: totalCalculated,
       date: new Date().toISOString().split('T')[0],
       paymentMethod: newSale.paymentMethod,
-      dotCode: newSale.dotCode,
+      dotCode: 'N/A',
       branchId: newSale.branchId,
       status: 'Timbrada CFDI 4.0'
     };
@@ -389,28 +381,7 @@ export default function OrdersCredits({ userRole, branchId }: OrdersCreditsProps
                   </div>
                 </div>
 
-                <div className="bg-brand-red/5 p-4 rounded-xl border border-brand-red/10">
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="block text-[9px] font-black text-brand-red uppercase tracking-widest">Código DOT de Fábrica (DOT/Semana/Año) *</label>
-                    <span className="text-[8px] font-black uppercase text-text-muted px-1.5 py-0.5 bg-interface-bg rounded border border-white/10">OBLIGATORIO</span>
-                  </div>
-                  <input
-                    type="text" required
-                    placeholder="Ej. DOT 1223 AB45"
-                    className={`w-full bg-interface-bg border rounded-xl py-2.5 px-4 text-xs font-mono text-white uppercase tracking-wider ${
-                      dotError ? 'border-brand-red' : 'border-white/10 focus:border-brand-red'
-                    }`}
-                    value={newSale.dotCode}
-                    onChange={(e) => handleDotChange(e.target.value)}
-                  />
-                  {dotError ? (
-                    <p className="text-[9px] text-brand-red font-bold mt-1.5 uppercase flex items-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5" /> {dotError}
-                    </p>
-                  ) : (
-                    <p className="text-[8px] text-text-muted mt-1 uppercase">Debe reportar número de lote por garantía obligatoria comercial.</p>
-                  )}
-                </div>
+
               </div>
 
               <div className="bg-black/30 p-4 rounded-xl border border-white/5 flex justify-between items-center">

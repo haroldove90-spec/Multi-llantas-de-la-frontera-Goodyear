@@ -16,7 +16,8 @@ import {
   Users,
   CreditCard,
   HandCoins,
-  Coins
+  Coins,
+  User
 } from 'lucide-react';
 import { UserRole } from '../data/mockData';
 
@@ -39,10 +40,12 @@ export const navItems = [
   { id: 'transfers', label: 'Traspasos', icon: Truck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'warranties', label: 'Garantías', icon: ShieldCheck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'reports', label: 'Reportes', icon: FileText, roles: ['superadmin', 'contador'] },
-  { id: 'fiscal', label: 'Facturación / CFDI', icon: FileText, roles: ['secretaria_facturista', 'credito_cobranza'] },
+  { id: 'fiscal', label: 'Facturación / CFDI', icon: FileText, roles: ['secretaria_facturista', 'credito_cobranza', 'contador', 'superadmin'] },
   { id: 'credits_center', label: 'Créditos', icon: CreditCard, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'accounts_payable', label: 'Cuentas x Pagar', icon: HandCoins, roles: ['superadmin', 'contador', 'secretaria_facturista'] },
   { id: 'sales', label: 'Cotizaciones', icon: ShoppingCart, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
+  { id: 'personal', label: 'Personal', icon: Users, roles: ['superadmin'] },
+  { id: 'profile', label: 'Mi Perfil', icon: User, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'customization', label: 'Preferencias', icon: Settings, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'help', label: 'Ayuda', icon: HelpCircle, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
 ];
@@ -56,9 +59,12 @@ export const getDynamicLabel = (itemId: string, role: UserRole | null): string =
       case 'transfers': return 'Traspasos tiempo real';
       case 'warranties': return 'Garantias';
       case 'reports': return 'Reportes';
+      case 'fiscal': return 'Facturación / CFDI';
       case 'credits_center': return 'Créditos ( Todas las sucursales )';
       case 'accounts_payable': return 'Cuentas por pagar ( Proveedores )';
       case 'sales': return 'Cotizaciones';
+      case 'personal': return 'Personal';
+      case 'profile': return 'Mi Perfil';
       case 'customization': return 'Preferencias';
       case 'help': return 'Ayuda';
     }
@@ -70,9 +76,11 @@ export const getDynamicLabel = (itemId: string, role: UserRole | null): string =
       case 'transfers': return 'Traspasos tiempo real';
       case 'warranties': return 'Garantias';
       case 'reports': return 'Reportes';
+      case 'fiscal': return 'Facturacion';
       case 'credits_center': return 'Créditos ( Solo su sucursal )';
       case 'accounts_payable': return 'Cuentas por pagar';
       case 'sales': return 'Cotizaciones';
+      case 'profile': return 'Mi Perfil';
       case 'customization': return 'Preferencias';
       case 'help': return 'Ayuda';
     }
@@ -87,6 +95,7 @@ export const getDynamicLabel = (itemId: string, role: UserRole | null): string =
       case 'credits_center': return 'Créditos ( Solo sucursale )';
       case 'accounts_payable': return 'Cuentas por pagar';
       case 'sales': return 'Cotizaciones';
+      case 'profile': return 'Mi Perfil';
       case 'customization': return 'Preferencias';
       case 'help': return 'Ayuda';
     }
@@ -98,6 +107,7 @@ export const getDynamicLabel = (itemId: string, role: UserRole | null): string =
       case 'transfers': return 'Traspasos tiempo real';
       case 'warranties': return 'Garantias';
       case 'fiscal': return 'Facturacion';
+      case 'profile': return 'Mi Perfil';
       case 'sales': return 'Cotizaciones';
       case 'customization': return 'Preferencias';
       case 'help': return 'Ayuda';
@@ -110,6 +120,7 @@ export const getDynamicLabel = (itemId: string, role: UserRole | null): string =
       case 'warranties': return 'Garantias';
       case 'sales': return 'Ventas, POS y Cotiz.';
       case 'credits_center': return 'Créditos y MSI';
+      case 'profile': return 'Mi Perfil';
       case 'customization': return 'Preferencias';
       case 'help': return 'Ayuda';
     }
@@ -122,9 +133,12 @@ export const getDynamicLabel = (itemId: string, role: UserRole | null): string =
       case 'transfers': return 'Traspasos tiempo real';
       case 'warranties': return 'Garantias';
       case 'reports': return 'Reportes';
+      case 'fiscal': return 'Facturacion';
       case 'credits_center': return 'Créditos ( solo su sucursal )';
       case 'accounts_payable': return 'Cuentas por pagar';
       case 'sales': return 'Cotizaciones';
+      case 'personal': return 'Personal';
+      case 'profile': return 'Mi Perfil';
       case 'customization': return 'Preferencias';
       case 'help': return 'Ayuda';
     }
@@ -144,9 +158,12 @@ export const getOrderedNavItems = (role: UserRole | null) => {
       'transfers',
       'warranties',
       'reports',
+      'fiscal',
       'credits_center',
       'accounts_payable',
       'sales',
+      'personal',
+      'profile',
       'customization',
       'help'
     ];
@@ -158,9 +175,11 @@ export const getOrderedNavItems = (role: UserRole | null) => {
       'transfers',
       'warranties',
       'reports',
+      'fiscal',
       'credits_center',
       'accounts_payable',
       'sales',
+      'profile',
       'customization',
       'help'
     ];
@@ -175,6 +194,7 @@ export const getOrderedNavItems = (role: UserRole | null) => {
       'credits_center',
       'accounts_payable',
       'sales',
+      'profile',
       'customization',
       'help'
     ];
@@ -186,6 +206,7 @@ export const getOrderedNavItems = (role: UserRole | null) => {
       'warranties',
       'sales',
       'credits_center',
+      'profile',
       'customization',
       'help'
     ];
@@ -199,6 +220,7 @@ export const getOrderedNavItems = (role: UserRole | null) => {
       'fiscal',
       'credits_center',
       'sales',
+      'profile',
       'customization',
       'help'
     ];
@@ -215,6 +237,8 @@ export const getOrderedNavItems = (role: UserRole | null) => {
       'credits_center',
       'accounts_payable',
       'sales',
+      'personal',
+      'profile',
       'customization',
       'help'
     ];

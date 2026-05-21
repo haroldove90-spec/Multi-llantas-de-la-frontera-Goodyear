@@ -54,10 +54,23 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
       }
 
       // 2. Fallback / direct checking of local mock users
+      // Load registered employees from localStorage
+      let dynamicUsers: any[] = [];
+      const savedAdded = localStorage.getItem('erp_add_employees') || localStorage.getItem('erp_added_employees');
+      if (savedAdded) {
+        try {
+          dynamicUsers = JSON.parse(savedAdded);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      const allUsers = [...USERS, ...dynamicUsers];
+
       // Normalizing emails to allow colon typo from the user prompt
       const normalizedQueryEmail = cleanEmail.replace(':', '_');
       
-      const localUser = USERS.find(u => {
+      const localUser = allUsers.find(u => {
         const normUserEmail = u.email.toLowerCase().replace(':', '_');
         return normUserEmail === normalizedQueryEmail;
       });

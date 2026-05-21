@@ -17,6 +17,8 @@ import CreditsCenter from './components/CreditsCenter';
 import AccountsPayable from './components/AccountsPayable';
 import ReportsStatistics from './components/ReportsStatistics';
 import LoginForm from './components/LoginForm';
+import Personal from './components/Personal';
+import Profile from './components/Profile';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight, Menu, ShieldCheck, RefreshCw, DollarSign, TrendingUp } from 'lucide-react';
 import { BRANCHES, UserRole } from './data/mockData';
@@ -48,6 +50,28 @@ export default function App() {
   const [userEmail, setUserEmail] = useState<string | null>(() => localStorage.getItem('erp_user_email') || null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  
+  // Profile Photo Reactivity state
+  const [userAvatar, setUserAvatar] = useState<string | null>(() => {
+    const activeEmail = localStorage.getItem('erp_user_email');
+    return activeEmail ? localStorage.getItem(`erp_user_avatar_${activeEmail}`) : null;
+  });
+
+  // Handle profile updates and header sync dynamically
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      const storedName = localStorage.getItem('erp_user_name');
+      const storedEmail = localStorage.getItem('erp_user_email');
+      if (storedName) setUserName(storedName);
+      if (storedEmail) {
+        setUserEmail(storedEmail);
+        const storedAvatar = localStorage.getItem(`erp_user_avatar_${storedEmail}`);
+        setUserAvatar(storedAvatar);
+      }
+    };
+    window.addEventListener('profile-updated', handleProfileUpdate);
+    return () => window.removeEventListener('profile-updated', handleProfileUpdate);
+  }, []);
   
   // Dynamic Exchange Rate state
   const [exchangeRate, setExchangeRate] = useState<number>(() => {
@@ -288,6 +312,10 @@ export default function App() {
         return <CreditsCenter userRole={userRole} branchId={selectedBranchId} />;
       case 'accounts_payable':
         return <AccountsPayable userRole={userRole} branchId={selectedBranchId} />;
+      case 'personal':
+        return <Personal userRole={userRole} branchId={selectedBranchId} />;
+      case 'profile':
+        return <Profile />;
       case 'customization':
         return <Customization />;
       case 'branches':
@@ -403,6 +431,21 @@ export default function App() {
             </div>
 
             <div className="hidden sm:flex items-center gap-4 mr-4 border-r border-interface-bg pr-6 border-zinc-900">
+              {/* Responsive Clickable Profile avatar */}
+              <div 
+                className="w-9 h-9 rounded-full overflow-hidden border border-[#ffb700]/30 hover:border-brand-red bg-zinc-950 flex items-center justify-center cursor-pointer transition-colors shrink-0"
+                onClick={() => handleUpdateTab('profile')}
+                title="Ir a mi perfil"
+              >
+                {userAvatar ? (
+                  <img src={userAvatar} alt="Profile Photo" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-tr from-brand-red/20 to-[#ffb700]/10 flex items-center justify-center text-brand-gold text-[10px] font-black uppercase">
+                    {(userName || 'US').substring(0, 2).toUpperCase()}
+                  </div>
+                )}
+              </div>
+
               <div className="flex flex-col items-end">
                 <span className="text-[11px] font-black text-white tracking-tight uppercase leading-none mb-1">
                   {userName}

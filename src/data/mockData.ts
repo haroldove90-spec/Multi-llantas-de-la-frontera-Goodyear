@@ -226,6 +226,20 @@ export const TIRES: Tire[] = [
 ];
 
 // load from storage at initialization
+const ensureMinimumStock = (tires: Tire[]) => {
+  tires.forEach(tire => {
+    if (!tire.stock) {
+      tire.stock = {};
+    }
+    const branchKeys = ['matriz', 'norte', 'sur', 'oriente', 'poniente', 'frontera'];
+    branchKeys.forEach(br => {
+      if (tire.stock[br] === undefined || tire.stock[br] <= 0) {
+        tire.stock[br] = 50; // Ofrece stock abundante de respaldo para pruebas fluidas
+      }
+    });
+  });
+};
+
 const loadPersistedTires = () => {
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem('erp_tires');
@@ -241,10 +255,12 @@ const loadPersistedTires = () => {
       }
     }
   }
+  ensureMinimumStock(TIRES);
 };
 loadPersistedTires();
 
 export const updateTiresStorage = (newTires: Tire[]) => {
+  ensureMinimumStock(newTires);
   TIRES.length = 0;
   TIRES.push(...newTires);
   if (typeof window !== 'undefined') {
