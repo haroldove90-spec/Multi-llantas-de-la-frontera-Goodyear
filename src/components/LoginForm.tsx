@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { USERS, UserRole, BRANCHES } from '../data/mockData';
+import { USERS, UserRole, BRANCHES, getActiveEmployees } from '../data/mockData';
 import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
 import { ShieldCheck, Mail, Lock, LogIn, ChevronRight, AlertCircle, KeyRound, Sparkles, Eye, EyeOff } from 'lucide-react';
@@ -54,18 +54,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
       }
 
       // 2. Fallback / direct checking of local mock users
-      // Load registered employees from localStorage
-      let dynamicUsers: any[] = [];
-      const savedAdded = localStorage.getItem('erp_add_employees') || localStorage.getItem('erp_added_employees');
-      if (savedAdded) {
-        try {
-          dynamicUsers = JSON.parse(savedAdded);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-
-      const allUsers = [...USERS, ...dynamicUsers];
+      const allUsers = getActiveEmployees();
 
       // Normalizing emails to allow colon typo from the user prompt
       const normalizedQueryEmail = cleanEmail.replace(':', '_');

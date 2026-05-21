@@ -15,7 +15,7 @@ import {
   Camera,
   RefreshCw
 } from 'lucide-react';
-import { BRANCHES, UserRole } from '../data/mockData';
+import { BRANCHES, UserRole, getActiveEmployees, saveActiveEmployees } from '../data/mockData';
 
 export default function Profile() {
   const [name, setName] = useState('');
@@ -45,26 +45,29 @@ export default function Profile() {
     setBranchId(activeBranch);
 
     // Retrieve custom phone if stored previously, or fall back
-    const savedPhone = localStorage.getItem(`erp_user_phone_${activeEmail}`) || '899-765-4321';
-    setPhone(savedPhone);
-
+    const savedPhone = localStorage.getItem(`erp_user_phone_${activeEmail}`);
+    
     // Retrieve avatar picture
     const savedAvatar = localStorage.getItem(`erp_user_avatar_${activeEmail}`);
     setAvatar(savedAvatar);
 
-    // Retrieve mock password from mock employees lists or USERS list to edit
-    const savedEmployeesString = localStorage.getItem('erp_added_employees');
-    let searchPass = '123_password';
-    if (savedEmployeesString) {
-      try {
-        const list = JSON.parse(savedEmployeesString);
-        const cur = list.find((e: any) => e.email.toLowerCase() === activeEmail.toLowerCase());
-        if (cur && cur.password) searchPass = cur.password;
-      } catch (e) {
-        console.error(e);
+    // Retrieve password and phone from the central list of active employees
+    const employees = getActiveEmployees();
+    const curEmp = employees.find((e: any) => e.email.toLowerCase() === activeEmail.toLowerCase());
+    
+    if (curEmp) {
+      if (curEmp.password) setPassword(curEmp.password);
+      if (curEmp.phone) {
+        setPhone(curEmp.phone);
+      } else if (savedPhone) {
+        setPhone(savedPhone);
+      } else {
+        setPhone('899-765-4321');
       }
+    } else {
+      setPhone(savedPhone || '899-765-4321');
+      setPassword('123_password');
     }
-    setPassword(searchPass);
 
   }, []);
 
@@ -135,26 +138,23 @@ export default function Profile() {
       localStorage.removeItem(`erp_user_avatar_${cleanEmail}`);
     }
 
-    // Update dynamic employees register list if we was added there
-    const savedEmployeesString = localStorage.getItem('erp_added_employees');
-    if (savedEmployeesString) {
-      try {
-        const list = JSON.parse(savedEmployeesString);
-        const updated = list.map((emp: any) => {
-          if (emp.email.toLowerCase() === cleanEmail) {
-            return {
-              ...emp,
-              name: name.trim(),
-              phone: phone.trim(),
-              password: password
-            };
-          }
-          return emp;
-        });
-        localStorage.setItem('erp_added_employees', JSON.stringify(updated));
-      } catch (e) {
-        console.error(e);
-      }
+    // Update dynamic employees register list
+    try {
+      const list = getActiveEmployees();
+      const updated = list.map((emp: any) => {
+        if (emp.email.toLowerCase() === cleanEmail) {
+          return {
+            ...emp,
+            name: name.trim(),
+            phone: phone.trim(),
+            password: password
+          };
+        }
+        return emp;
+      });
+      saveActiveEmployees(updated);
+    } catch (e) {
+      console.error(e);
     }
 
     // Trigger visual refresh event immediately in main context headers

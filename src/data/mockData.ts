@@ -15,21 +15,53 @@ export interface User {
   branchId: string | 'all'; // 'all' for superadmin
   email: string;
   password?: string;
+  phone?: string;
 }
 
 export const USERS: User[] = [
-  { id: 'u0', name: 'Harold Anguiano', role: 'superadmin', branchId: 'all', email: 'harold_anguiano@multillanta.com', password: '123_harold' },
-  { id: 'u0_alt', name: 'Harold Anguiano', role: 'superadmin', branchId: 'all', email: 'harold_anguiano@multillantas.com', password: '123_harold' },
-  { id: 'u1', name: 'Manuel Esparza', role: 'superadmin', branchId: 'all', email: 'manuel_esparza@multillantas.com', password: '123_esparza' },
-  { id: 'u2_1', name: 'Manuel Villaseñor', role: 'vendedor', branchId: 'norte', email: 'manuel_villasenor@multillantas.com', password: '123_vendedor' },
-  { id: 'u2_2', name: 'Manuel Villaseñor', role: 'vendedor', branchId: 'norte', email: 'manuel:villasenor@multillantas.com', password: '123_vendedor' }, // support literal colon typo from prompt
-  { id: 'u3', name: 'Liliana Medina', role: 'contador', branchId: 'matriz', email: 'liliana_medina@multillantas.com', password: '123_contador' },
-  { id: 'u4', name: 'Mario Vargas', role: 'vendedor', branchId: 'matriz', email: 'mario_vargas@multillantas.com', password: '123_vendedor' },
-  { id: 'u5', name: 'Magdalena López', role: 'secretaria_facturista', branchId: 'matriz', email: 'magdalena_lopez@multillantas.com', password: '123_facturista' },
-  { id: 'u6', name: 'Cristian Esparza', role: 'vendedor', branchId: 'oriente', email: 'cristian_esparza@multillantas.com', password: '123_vendedor' },
-  { id: 'u7', name: 'Misael Esparza', role: 'credito_cobranza', branchId: 'poniente', email: 'misael_esparza@multillantas.com', password: '123_credito' },
-  { id: 'u8', name: 'Alfredo Esparza', role: 'vendedor', branchId: 'sur', email: 'alfredo_esparza@miltillantas.com', password: '123_vendedor' }
+  { id: 'u0', name: 'Harold Anguiano', role: 'superadmin', branchId: 'all', email: 'harold_anguiano@multillanta.com', password: '123_harold', phone: '899-111-2222' },
+  { id: 'u0_alt', name: 'Harold Anguiano', role: 'superadmin', branchId: 'all', email: 'harold_anguiano@multillantas.com', password: '123_harold', phone: '899-111-2222' },
+  { id: 'u1', name: 'Manuel Esparza', role: 'superadmin', branchId: 'all', email: 'manuel_esparza@multillantas.com', password: '123_esparza', phone: '899-333-4444' },
+  { id: 'u2_1', name: 'Manuel Villaseñor', role: 'vendedor', branchId: 'norte', email: 'manuel_villasenor@multillantas.com', password: '123_vendedor', phone: '899-555-6666' },
+  { id: 'u2_2', name: 'Manuel Villaseñor', role: 'vendedor', branchId: 'norte', email: 'manuel:villasenor@multillantas.com', password: '123_vendedor', phone: '899-555-6666' }, // support literal colon typo from prompt
+  { id: 'u3', name: 'Liliana Medina', role: 'contador', branchId: 'matriz', email: 'liliana_medina@multillantas.com', password: '123_contador', phone: '899-123-4567' },
+  { id: 'u4', name: 'Mario Vargas', role: 'vendedor', branchId: 'matriz', email: 'mario_vargas@multillantas.com', password: '123_vendedor', phone: '899-888-9999' },
+  { id: 'u5', name: 'Magdalena López', role: 'secretaria_facturista', branchId: 'matriz', email: 'magdalena_lopez@multillantas.com', password: '123_facturista', phone: '899-111-3333' },
+  { id: 'u6', name: 'Cristian Esparza', role: 'vendedor', branchId: 'oriente', email: 'cristian_esparza@multillantas.com', password: '123_vendedor', phone: '899-444-5555' },
+  { id: 'u7', name: 'Misael Esparza', role: 'credito_cobranza', branchId: 'poniente', email: 'misael_esparza@multillantas.com', password: '123_credito', phone: '899-666-7777' },
+  { id: 'u8', name: 'Alfredo Esparza', role: 'vendedor', branchId: 'sur', email: 'alfredo_esparza@miltillantas.com', password: '123_vendedor', phone: '899-222-8888' }
 ];
+
+export function getActiveEmployees(): User[] {
+  if (typeof window === 'undefined') return USERS;
+  const saved = localStorage.getItem('erp_employees_custom');
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  // Initialize with USERS if not set details and return
+  try {
+    localStorage.setItem('erp_employees_custom', JSON.stringify(USERS));
+  } catch (e) {
+    console.error(e);
+  }
+  return USERS;
+}
+
+export function saveActiveEmployees(employeesList: User[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('erp_employees_custom', JSON.stringify(employeesList));
+  
+  // Backward compatibility with legacy storage keys
+  const staticIds = USERS.map(u => u.id);
+  const dynamicOnly = employeesList.filter(emp => !staticIds.includes(emp.id));
+  localStorage.setItem('erp_added_employees', JSON.stringify(dynamicOnly));
+  
+  window.dispatchEvent(new CustomEvent('erp_employees_updated', { detail: employeesList }));
+}
 
 export interface Branch {
   id: string;

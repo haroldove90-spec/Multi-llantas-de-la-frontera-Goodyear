@@ -20,7 +20,7 @@ import {
   Save,
   User
 } from 'lucide-react';
-import { USERS, UserRole, BRANCHES } from '../data/mockData';
+import { USERS, UserRole, BRANCHES, getActiveEmployees, saveActiveEmployees } from '../data/mockData';
 
 interface PersonalProps {
   userRole?: UserRole | null;
@@ -47,41 +47,13 @@ export default function Personal({ userRole, branchId }: PersonalProps) {
 
   // Load all employees (stored custom first, fallback to default USERS + locally added employees)
   const [employees, setEmployees] = useState<any[]>(() => {
-    if (typeof window !== 'undefined') {
-      const savedCustom = localStorage.getItem('erp_employees_custom');
-      if (savedCustom) {
-        try {
-          return JSON.parse(savedCustom);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      
-      const savedAdded = localStorage.getItem('erp_added_employees');
-      let localAdded: any[] = [];
-      if (savedAdded) {
-        try {
-          localAdded = JSON.parse(savedAdded);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      return [...USERS, ...localAdded];
-    }
-    return USERS;
+    return getActiveEmployees();
   });
 
   // Keep employees stored in localStorage
   const saveAddedEmployees = (list: any[]) => {
     setEmployees(list);
-    localStorage.setItem('erp_employees_custom', JSON.stringify(list));
-    
-    // Legacy support for header lookup
-    const staticIds = USERS.map(u => u.id);
-    const dynamicOnly = list.filter(emp => !staticIds.includes(emp.id));
-    localStorage.setItem('erp_added_employees', JSON.stringify(dynamicOnly));
-    
-    window.dispatchEvent(new CustomEvent('erp_employees_updated', { detail: list }));
+    saveActiveEmployees(list);
   };
 
   const [newEmployee, setNewEmployee] = useState<NewEmployee>({
@@ -216,10 +188,11 @@ export default function Personal({ userRole, branchId }: PersonalProps) {
     const activeEmail = localStorage.getItem('erp_user_email');
     if (activeEmail && activeEmail.toLowerCase() === email.trim().toLowerCase()) {
       localStorage.setItem('erp_user_name', name.trim());
+      localStorage.setItem('erp_user_role', role);
       localStorage.setItem(`erp_user_phone_${activeEmail}`, phone.trim());
       
       window.dispatchEvent(new CustomEvent('profile-updated', { 
-        detail: { name: name.trim(), email: activeEmail } 
+        detail: { name: name.trim(), email: activeEmail, role } 
       }));
     }
 
