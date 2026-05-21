@@ -4,7 +4,7 @@ import {
   ShoppingCart, X, Upload, CheckCircle2, Image as ImageIcon, 
   Loader2, DollarSign, Sparkles, FilterX, HelpCircle
 } from 'lucide-react';
-import { TIRES, BRANCHES, UserRole, Tire, updateTiresStorage } from '../data/mockData';
+import { TIRES, BRANCHES, UserRole, Tire, updateTiresStorage, CATEGORIES, Category, updateCategoriesStorage } from '../data/mockData';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface InventoryProps {
@@ -14,6 +14,7 @@ interface InventoryProps {
 
 export default function Inventory({ userRole, branchId }: InventoryProps) {
   const [tiresList, setTiresList] = useState<Tire[]>(() => [...TIRES]);
+  const [categoriesList, setCategoriesList] = useState<Category[]>(() => [...CATEGORIES]);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Custom Filters state
@@ -31,6 +32,12 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStepDesc, setUploadStepDesc] = useState('');
 
+  // Modal / Form state for Category management
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false);
+  const [newCategoryData, setNewCategoryData] = useState({ id: '', name: '', description: '' });
+  const [categoryError, setCategoryError] = useState('');
+  const [categorySuccess, setCategorySuccess] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -41,7 +48,7 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
     rim: '',
     loadIndex: '',
     speedRating: '',
-    type: 'HT' as 'AT' | 'HT' | 'MT',
+    type: 'HT' as string,
     price: '',
     cost: '',
     price1: '',
@@ -68,8 +75,17 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
         setTiresList([...e.detail]);
       }
     };
+    const handleCategoriesUpdate = (e: any) => {
+      if (e.detail) {
+        setCategoriesList([...e.detail]);
+      }
+    };
     window.addEventListener('erp-tires-updated', handleStorageUpdate);
-    return () => window.removeEventListener('erp-tires-updated', handleStorageUpdate);
+    window.addEventListener('erp-categories-updated', handleCategoriesUpdate);
+    return () => {
+      window.removeEventListener('erp-tires-updated', handleStorageUpdate);
+      window.removeEventListener('erp-categories-updated', handleCategoriesUpdate);
+    };
   }, []);
 
   // Compute unique filter values dynamically from current list
@@ -140,6 +156,64 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
     setFilterWidth('all');
     setFilterProfile('all');
     setFilterStock('all');
+  };
+
+  // Submit Handler for Category
+  const handleAddCategorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCategoryError('');
+    setCategorySuccess(false);
+
+    const normId = newCategoryData.id.trim().toUpperCase();
+    const normName = newCategoryData.name.trim();
+    const normDesc = newCategoryData.description.trim();
+
+    if (!normId || !normName) {
+      setCategoryError('El código (ID) y el nombre de la categoría son obligatorios.');
+      return;
+    }
+
+    // Check if ID already exists
+    if (categoriesList.some(cat => cat.id.toUpperCase() === normId)) {
+      setCategoryError(`Ya existe una categoría con el código de identificación "${normId}".`);
+      return;
+    }
+
+    const newCategory: Category = {
+      id: normId,
+      name: normName,
+      description: normDesc || undefined
+    };
+
+    const updatedCategories = [...categoriesList, newCategory];
+    setCategoriesList(updatedCategories);
+    updateCategoriesStorage(updatedCategories);
+    setCategorySuccess(true);
+    setNewCategoryData({ id: '', name: '', description: '' });
+
+    // Set as the active selected type in the brand-new tire registration form automatically!
+    setFormData(v => ({ ...v, type: normId }));
+
+    setTimeout(() => {
+      setCategorySuccess(false);
+    }, 3000);
+  };
+
+  const handleDeleteCategory = (catIdToDelete: string) => {
+    // Protect default categories from being deleted
+    if (['HT', 'AT', 'MT'].includes(catIdToDelete.toUpperCase())) {
+      setCategoryError('Por seguridad, no se pueden eliminar las categorías base del sistema (HT, AT, MT).');
+      return;
+    }
+
+    const updatedCategories = categoriesList.filter(cat => cat.id.toUpperCase() !== catIdToDelete.toUpperCase());
+    setCategoriesList(updatedCategories);
+    updateCategoriesStorage(updatedCategories);
+    
+    // If deleted category was selected in the form, fall back to "HT"
+    if (formData.type.toUpperCase() === catIdToDelete.toUpperCase()) {
+      setFormData(v => ({ ...v, type: 'HT' }));
+    }
   };
 
   // Submit Handler
@@ -273,6 +347,15 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
               className="flex items-center gap-2 px-4 py-2.5 bg-zinc-900 text-zinc-300 hover:text-white rounded-xl hover:bg-zinc-800 transition-all text-[11px] font-black uppercase tracking-widest border border-zinc-800"
             >
               Restaurar Originales
+            </button>
+          )}
+
+          {canManagePrice && (
+            <button 
+              onClick={() => setShowCategoriesModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-zinc-950 text-[#ffb700] hover:text-white rounded-xl hover:bg-zinc-900 transition-all text-[11px] font-black uppercase tracking-widest border border-zinc-800 cursor-pointer"
+            >
+              Categorías ({categoriesList.length})
             </button>
           )}
 
@@ -527,7 +610,10 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
                             {tire.width}/{tire.profile} R{tire.rim}
                           </span>
                           <div className="flex gap-1">
-                            <span className="text-[8px] bg-brand-blue/15 text-brand-blue font-black tracking-widest px-1 py-0.5 rounded uppercase">
+                            <span 
+                              title={categoriesList.find(c => c.id.toUpperCase() === tire.type.toUpperCase())?.name || tire.type}
+                              className="text-[8px] bg-brand-blue/15 text-brand-blue font-black tracking-widest px-1 py-0.5 rounded uppercase cursor-help"
+                            >
                               {tire.type}
                             </span>
                             <span className="text-[8px] bg-zinc-900 text-zinc-500 font-black tracking-widest px-1 py-0.5 rounded uppercase">
@@ -677,7 +763,10 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
                         ) : (
                           <Package className="w-6 h-6" />
                         )}
-                        <span className="absolute bottom-0 right-0 bg-[#ffb700] text-black text-[7px] font-black px-1 py-0.2 rounded uppercase">
+                        <span 
+                          title={categoriesList.find(c => c.id.toUpperCase() === tire.type.toUpperCase())?.name || tire.type}
+                          className="absolute bottom-0 right-0 bg-[#ffb700] text-black text-[7px] font-black px-1 py-0.2 rounded uppercase cursor-help"
+                        >
                           {tire.type}
                         </span>
                       </div>
@@ -843,15 +932,26 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
                         </div>
 
                         <div className="space-y-1.5 md:col-span-2">
-                          <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Categoría / Terreno</label>
+                          <div className="flex justify-between items-center gap-2">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Categoría / Terreno *</label>
+                            <button
+                              type="button"
+                              onClick={() => setShowCategoriesModal(true)}
+                              className="text-[9px] text-[#ffb700] hover:text-white font-extrabold uppercase tracking-wide transition-colors cursor-pointer"
+                            >
+                              + Crear Categoría
+                            </button>
+                          </div>
                           <select 
                             value={formData.type}
-                            onChange={(e) => setFormData(v => ({ ...v, type: e.target.value as any }))}
-                            className="w-full text-xs p-3.5 bg-black/70 border border-zinc-800 rounded-2xl outline-none focus:border-[#ffb700] font-bold text-white tracking-widest uppercase"
+                            onChange={(e) => setFormData(v => ({ ...v, type: e.target.value }))}
+                            className="w-full text-xs p-3.5 bg-black/70 border border-zinc-800 rounded-2xl outline-none focus:border-[#ffb700] font-bold text-white tracking-widest uppercase cursor-pointer"
                           >
-                            <option value="HT">HT (Highway Terrain) - Carretera</option>
-                            <option value="AT">AT (All Terrain) - Mixto</option>
-                            <option value="MT">MT (Mud Terrain) - Lodo/Aventura</option>
+                            {categoriesList.map(cat => (
+                              <option key={cat.id} value={cat.id}>
+                                {cat.id} - {cat.name}
+                              </option>
+                            ))}
                           </select>
                         </div>
 
@@ -1143,6 +1243,187 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
                   </div>
                 )}
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {/* Modal: Categorías */}
+        {showCategoriesModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-4xl bg-[#0a0a0a] border border-zinc-900 rounded-3xl overflow-hidden shadow-2xl"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-zinc-900 bg-black">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-zinc-950 rounded-xl border border-zinc-800 text-[#ffb700]">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-md font-black tracking-wider uppercase text-white">Administrador de Categorías</h3>
+                    <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Altas, Bajas y Clasificación de Productos</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    setShowCategoriesModal(false);
+                    setCategoryError('');
+                    setCategorySuccess(false);
+                  }}
+                  className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-xl transition-all cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body split in columns */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6">
+                
+                {/* Column 1: Alta de Categoría */}
+                <div className="md:col-span-5 space-y-4">
+                  <div className="border-l-2 border-[#ffb700] pl-3">
+                    <h4 className="text-[11px] font-black uppercase text-white tracking-widest">Crear Nueva Categoría</h4>
+                    <p className="text-[9px] text-zinc-500 uppercase font-semibold">Introduce los detalles de clasificación</p>
+                  </div>
+
+                  <form onSubmit={handleAddCategorySubmit} className="space-y-4">
+                    {categoryError && (
+                      <div className="p-3 bg-brand-red/10 border border-brand-red/20 text-brand-red rounded-xl text-[10px] font-black uppercase tracking-wide">
+                        ⚠️ Err: {categoryError}
+                      </div>
+                    )}
+
+                    {categorySuccess && (
+                      <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-[10px] font-black uppercase tracking-wide flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" /> ¡Categoría registrada con éxito!
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Código / ID *</label>
+                      <input 
+                        type="text"
+                        required
+                        maxLength={6}
+                        placeholder="Ej. PASS, AGR, COM"
+                        value={newCategoryData.id}
+                        onChange={(e) => {
+                          setCategoryError('');
+                          setNewCategoryData(v => ({ ...v, id: e.target.value.slice(0, 6).toUpperCase() }));
+                        }}
+                        className="w-full text-xs p-3.5 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ffb700] font-black text-white uppercase tracking-widest placeholder:tracking-normal placeholder:font-medium"
+                      />
+                      <span className="text-[8px] text-zinc-500 font-medium block">Formato corto alfanumérico (máximo 6 letras).</span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Nombre de la Categoría *</label>
+                      <input 
+                        type="text"
+                        required
+                        placeholder="Ej. Pasajero, Agrícola, Comercial"
+                        value={newCategoryData.name}
+                        onChange={(e) => {
+                          setCategoryError('');
+                          setNewCategoryData(v => ({ ...v, name: e.target.value }));
+                        }}
+                        className="w-full text-xs p-3.5 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ffb700] font-bold text-white uppercase"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Descripción Breve</label>
+                      <textarea 
+                        rows={2}
+                        placeholder="Ej. Neumáticos para vehículos familiares y sedan..."
+                        value={newCategoryData.description}
+                        onChange={(e) => setNewCategoryData(v => ({ ...v, description: e.target.value }))}
+                        className="w-full text-xs p-3.5 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ffb700] font-medium text-zinc-300 resize-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3.5 bg-[#ffb700] hover:bg-white text-black font-black uppercase tracking-widest rounded-2xl text-[10px] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#ffb700]/10"
+                    >
+                      <Plus className="w-4 h-4 text-black" /> Registrar de Alta
+                    </button>
+                  </form>
+                </div>
+
+                {/* Column 2: Ver Categorías Existentes */}
+                <div className="md:col-span-7 space-y-4">
+                  <div className="border-l-2 border-zinc-800 pl-3">
+                    <h4 className="text-[11px] font-black uppercase text-white tracking-widest">Catálogo de Categorías Activas ({categoriesList.length})</h4>
+                    <p className="text-[9px] text-zinc-500 uppercase font-semibold">Lista maestra grabada en el sistema</p>
+                  </div>
+
+                  <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+                    {categoriesList.map(cat => {
+                      const isBase = ['HT', 'AT', 'MT'].includes(cat.id.toUpperCase());
+
+                      return (
+                        <div 
+                          key={cat.id} 
+                          className="p-4 bg-zinc-950 border border-zinc-900 rounded-2xl flex items-start justify-between gap-4 transition-all hover:border-zinc-800"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 bg-zinc-900 border border-zinc-850 rounded font-mono font-black text-[10px] text-[#ffb700] uppercase tracking-wider">
+                                {cat.id}
+                              </span>
+                              <span className="text-xs font-extrabold text-white uppercase">{cat.name}</span>
+                              {isBase && (
+                                <span className="text-[7px] text-zinc-550 bg-zinc-900 border border-zinc-800 px-1 py-0.2 rounded font-black uppercase tracking-wider">
+                                  Sistema / Núcleo
+                                </span>
+                              )}
+                            </div>
+                            {cat.description && (
+                              <p className="text-[9.5px] text-zinc-400 font-medium leading-relaxed">{cat.description}</p>
+                            )}
+                          </div>
+
+                          {!isBase && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCategory(cat.id)}
+                              className="text-[9px] bg-brand-red/10 text-brand-red border border-brand-red/15 hover:bg-brand-red hover:text-white hover:border-brand-red px-2 py-1.5 rounded-lg font-black uppercase tracking-wider transition-all cursor-pointer"
+                              title="Eliminar categoría"
+                            >
+                              Eliminar
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="p-3 bg-zinc-950/50 border border-zinc-900/50 rounded-xl text-[8.5px] text-zinc-500 font-medium leading-relaxed">
+                    ℹ️ <span className="font-bold text-zinc-400">Nota técnica de Supabase:</span> Las nuevas categorías dadas de alta aquí quedan registradas localmente en la caché de Supabase sincronizada por el navegador (`localStorage`) y son mapeadas en tiempo real para todos los flujos de cotizaciones, notas de venta y control de Inventario Maestro.
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t border-zinc-900 bg-black flex justify-end">
+                <button 
+                  onClick={() => {
+                    setShowCategoriesModal(false);
+                    setCategoryError('');
+                    setCategorySuccess(false);
+                  }}
+                  className="px-5 py-2.5 bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer"
+                >
+                  Cerrar Administrador
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

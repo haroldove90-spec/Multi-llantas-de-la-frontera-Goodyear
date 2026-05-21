@@ -47,6 +47,18 @@ export interface BranchSummary {
   employeeCount: number;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export const CATEGORIES: Category[] = [
+  { id: 'HT', name: 'Highway Terrain (Carretera)', description: 'Neumáticos diseñados para autopistas y conducción diaria en asfalto.' },
+  { id: 'AT', name: 'All Terrain (Todo Terreno)', description: 'Neumáticos versátiles para carretera pavimentada y terracería ligera.' },
+  { id: 'MT', name: 'Mud Terrain (Lodo/Aventura)', description: 'Neumáticos de tacos profundos especializados para off-road extremo y lodo.' },
+];
+
 export interface Tire {
   id: string;
   brand: string;
@@ -58,7 +70,7 @@ export interface Tire {
   rim: number;
   loadIndex: string;
   speedRating: string;
-  type: 'AT' | 'HT' | 'MT';
+  type: string; // ID de Categoría dinámica (anteriormente estrictamente 'AT'|'HT'|'MT')
   price: number;
   cost: number;
   price1?: number; // Precio 1
@@ -239,6 +251,33 @@ export const updateTiresStorage = (newTires: Tire[]) => {
     localStorage.setItem('erp_tires', JSON.stringify(TIRES));
     // Dispatch a custom event to notify other mounted components in the tab
     window.dispatchEvent(new CustomEvent('erp-tires-updated', { detail: TIRES }));
+  }
+};
+
+const loadPersistedCategories = () => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('erp_categories');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          CATEGORIES.length = 0;
+          CATEGORIES.push(...parsed);
+        }
+      } catch (e) {
+        console.error('Failed to load persisted categories:', e);
+      }
+    }
+  }
+};
+loadPersistedCategories();
+
+export const updateCategoriesStorage = (newCategories: Category[]) => {
+  CATEGORIES.length = 0;
+  CATEGORIES.push(...newCategories);
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('erp_categories', JSON.stringify(CATEGORIES));
+    window.dispatchEvent(new CustomEvent('erp-categories-updated', { detail: CATEGORIES }));
   }
 };
 

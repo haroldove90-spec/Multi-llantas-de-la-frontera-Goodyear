@@ -373,5 +373,33 @@ DROP POLICY IF EXISTS "Public Write" ON public.app_config;
 CREATE POLICY "Configuración ERP Pública" ON public.app_config FOR SELECT USING (true);
 CREATE POLICY "Edición ERP Permitida" ON public.app_config FOR ALL USING (true);
 
+-- 12. Tabla de Categorías de Neumáticos (Para altas dinámicas)
+CREATE TABLE IF NOT EXISTS public.categories (
+  id TEXT PRIMARY KEY, -- e.g. 'HT', 'AT', 'MT', 'PAS', 'CAM'
+  name TEXT NOT NULL,
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Insertar categorías base por defecto si no existen
+INSERT INTO public.categories (id, name, description)
+VALUES 
+  ('HT', 'Highway Terrain (Carretera)', 'Neumáticos optimizados para autopistas y conducción urbana diaria.'),
+  ('AT', 'All Terrain (Todo Terreno)', 'Neumáticos versátiles para asfalto pavimentado y caminos rústicos.'),
+  ('MT', 'Mud Terrain (Lodo/Aventura)', 'Neumáticos de tacos profundos especializados para off-road extremo y lodo.')
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description;
+
+-- Modificar columna type de tires para soportar categorías dinámicas
+-- Primero removemos la restricción check si existe
+ALTER TABLE public.tires DROP CONSTRAINT IF EXISTS tires_type_check;
+
+-- RLS para la tabla de categorías
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Lectura Pública de Categorías" ON public.categories;
+CREATE POLICY "Lectura Pública de Categorías" ON public.categories FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Edición de Categorías para Autenticados" ON public.categories;
+CREATE POLICY "Edición de Categorías para Autenticados" ON public.categories FOR ALL USING (true);
+
 -- Limpieza de la función helper de instalación para seguridad
 DROP FUNCTION IF EXISTS public.create_erp_user;
