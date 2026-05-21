@@ -15,7 +15,10 @@ import {
   MoreVertical,
   Activity,
   UserCheck,
-  Building
+  Building,
+  Pencil,
+  Save,
+  User
 } from 'lucide-react';
 import { USERS, UserRole, BRANCHES } from '../data/mockData';
 
@@ -38,31 +41,46 @@ export default function Personal({ userRole, branchId }: PersonalProps) {
   const [filterRole, setFilterRole] = useState<string>('All');
   const [filterBranch, setFilterBranch] = useState<string>('All');
   
-  // Tab/view state: 'list' or 'new'
-  const [activeSubView, setActiveSubView] = useState<'list' | 'new'>('list');
+  // Tab/view state: 'list', 'new', or 'edit'
+  const [activeSubView, setActiveSubView] = useState<'list' | 'new' | 'edit'>('list');
+  const [editingEmployee, setEditingEmployee] = useState<any | null>(null);
 
-  // Load all employees (stored default USERS + locally added employees)
+  // Load all employees (stored custom first, fallback to default USERS + locally added employees)
   const [employees, setEmployees] = useState<any[]>(() => {
-    const staticUsers = USERS;
-    let localAdded: any[] = [];
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('erp_added_employees');
-      if (saved) {
+      const savedCustom = localStorage.getItem('erp_employees_custom');
+      if (savedCustom) {
         try {
-          localAdded = JSON.parse(saved);
+          return JSON.parse(savedCustom);
         } catch (e) {
           console.error(e);
         }
       }
+      
+      const savedAdded = localStorage.getItem('erp_added_employees');
+      let localAdded: any[] = [];
+      if (savedAdded) {
+        try {
+          localAdded = JSON.parse(savedAdded);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      return [...USERS, ...localAdded];
     }
-    return [...staticUsers, ...localAdded];
+    return USERS;
   });
 
-  // Keep added employees stored in localStorage
+  // Keep employees stored in localStorage
   const saveAddedEmployees = (list: any[]) => {
+    setEmployees(list);
+    localStorage.setItem('erp_employees_custom', JSON.stringify(list));
+    
+    // Legacy support for header lookup
     const staticIds = USERS.map(u => u.id);
     const dynamicOnly = list.filter(emp => !staticIds.includes(emp.id));
     localStorage.setItem('erp_added_employees', JSON.stringify(dynamicOnly));
+    
     window.dispatchEvent(new CustomEvent('erp_employees_updated', { detail: list }));
   };
 
@@ -155,6 +173,63 @@ export default function Personal({ userRole, branchId }: PersonalProps) {
       setActiveSubView('list');
       setFormSuccess(null);
     }, 2000);
+  };
+
+  const handleUpdateEmployee = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    setFormSuccess(null);
+
+    if (!editingEmployee) return;
+
+    const { id, name, phone, email, password, role, branchId } = editingEmployee;
+
+    if (!name.trim()) return setFormError('El nombre completo es obligatorio.');
+    if (!phone.trim()) return setFormError('El teléfono es obligatorio.');
+    if (!email.trim() || !email.includes('@')) return setFormError('Ingrese un correo electrónico válido.');
+    if (!password || password.length < 4) return setFormError('La contraseña debe tener al menos 4 caracteres.');
+
+    // Check if email already registered by another employee
+    const emailExists = employees.some(emp => emp.id !== id && emp.email.toLowerCase() === email.trim().toLowerCase());
+    if (emailExists) {
+      return setFormError('Este correo electrónico ya está registrado por otro colaborador.');
+    }
+
+    const updatedList = employees.map(emp => {
+      if (emp.id === id) {
+        return {
+          ...emp,
+          name: name.trim(),
+          phone: phone.trim(),
+          email: email.trim().toLowerCase(),
+          password: password,
+          role,
+          branchId
+        };
+      }
+      return emp;
+    });
+
+    saveAddedEmployees(updatedList);
+
+    // Sync header / login info if we edited our own profile
+    const activeEmail = localStorage.getItem('erp_user_email');
+    if (activeEmail && activeEmail.toLowerCase() === email.trim().toLowerCase()) {
+      localStorage.setItem('erp_user_name', name.trim());
+      localStorage.setItem(`erp_user_phone_${activeEmail}`, phone.trim());
+      
+      window.dispatchEvent(new CustomEvent('profile-updated', { 
+        detail: { name: name.trim(), email: activeEmail } 
+      }));
+    }
+
+    setFormSuccess(`¡Colaborador ${name} actualizado correctamente!`);
+
+    setTimeout(() => {
+      setActiveSubView('list');
+      setEditingEmployee(null);
+      setFormSuccess(null);
+    }, 1800);
   };
 
   const handleDeleteEmployee = (id: string, name: string) => {
@@ -367,6 +442,163 @@ export default function Personal({ userRole, branchId }: PersonalProps) {
             </div>
           </form>
         </motion.div>
+      ) : activeSubView === 'edit' && editingEmployee ? (
+        /* EDIT EMPLOYEE FORM */
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-xl mx-auto bg-zinc-950 border-2 border-zinc-900 rounded-3xl p-8 shadow-2xl relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-red via-[#ffb700] to-brand-red"></div>
+          
+          <h3 className="text-sm font-black uppercase tracking-[0.2em] text-[#ffb700] mb-8 text-center flex items-center justify-center gap-2">
+            <Pencil className="w-5 h-5 text-brand-red animate-pulse" />
+            Editar Registro de Colaborador
+          </h3>
+
+          <form onSubmit={handleUpdateEmployee} className="space-y-6">
+            {formError && (
+              <div className="p-4 bg-brand-red/10 border border-brand-red/30 rounded-2xl flex items-center gap-3 text-xs font-bold text-brand-red uppercase tracking-tight">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <span>{formError}</span>
+              </div>
+            )}
+
+            {formSuccess && (
+              <div className="p-4 bg-emerald-950/50 border border-emerald-500/30 rounded-2xl flex items-center gap-3 text-xs font-bold text-emerald-400 uppercase tracking-tight">
+                <CheckCircle2 className="w-5 h-5 shrink-0 animate-bounce" />
+                <span>{formSuccess}</span>
+              </div>
+            )}
+
+            {/* Name */}
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#ffb700]">
+                Nombre del Empleado *
+              </label>
+              <input 
+                type="text"
+                placeholder="Nombre Completo (Ej. Juan Pérez López)"
+                className="w-full bg-black border border-zinc-850 rounded-2xl py-3.5 px-4 text-xs font-semibold focus:outline-none focus:border-brand-red focus:shadow-[0_0_12px_rgba(255,0,0,0.15)] placeholder:text-zinc-600 tracking-wide text-white"
+                value={editingEmployee.name}
+                onChange={e => setEditingEmployee({...editingEmployee, name: e.target.value})}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Phone */}
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#ffb700]">
+                  Teléfono *
+                </label>
+                <div className="relative">
+                  <input 
+                    type="tel"
+                    placeholder="899-123-4567"
+                    className="w-full bg-black border border-zinc-850 rounded-2xl py-3.5 pl-10 pr-4 text-xs font-semibold focus:outline-none focus:border-brand-red tracking-wider text-white"
+                    value={editingEmployee.phone || ''}
+                    onChange={e => setEditingEmployee({...editingEmployee, phone: e.target.value})}
+                  />
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-600" />
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#ffb700]">
+                  Correo Electrónico *
+                </label>
+                <div className="relative">
+                  <input 
+                    type="email"
+                    placeholder="email@multillantas.com"
+                    className="w-full bg-black border border-zinc-850 rounded-2xl py-3.5 pl-10 pr-4 text-xs font-semibold focus:outline-none focus:border-brand-red text-white"
+                    value={editingEmployee.email}
+                    onChange={e => setEditingEmployee({...editingEmployee, email: e.target.value})}
+                  />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-650" />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Password */}
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#ffb700]">
+                  Contraseña de Acceso *
+                </label>
+                <div className="relative">
+                  <input 
+                    type="text"
+                    placeholder="Defina clave de ingreso"
+                    className="w-full bg-black border border-zinc-850 rounded-2xl py-3.5 pl-10 pr-4 text-xs font-mono font-bold focus:outline-none focus:border-brand-red text-white"
+                    value={editingEmployee.password || ''}
+                    onChange={e => setEditingEmployee({...editingEmployee, password: e.target.value})}
+                  />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-650" />
+                </div>
+              </div>
+
+              {/* Dashboard Role */}
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#ffb700]">
+                  Rol para el Dashboard *
+                </label>
+                <div className="relative">
+                  <select 
+                    className="w-full bg-black border border-zinc-850 rounded-2xl py-3.5 px-4 text-xs font-black uppercase tracking-wider outline-none focus:border-brand-red text-white cursor-pointer"
+                    value={editingEmployee.role}
+                    onChange={e => setEditingEmployee({...editingEmployee, role: e.target.value as UserRole})}
+                  >
+                    <option value="vendedor">Vendedor / Asesor</option>
+                    <option value="contador">Contador</option>
+                    <option value="secretaria_facturista">Secretaria Facturista</option>
+                    <option value="credito_cobranza">Crédito y Cobranza</option>
+                    <option value="superadmin">Administrador Global</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Work Branch */}
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#ffb700]">
+                Sucursal de Trabajo *
+              </label>
+              <select 
+                className="w-full bg-black border border-zinc-855 rounded-2xl py-3.5 px-4 text-xs font-black uppercase tracking-wider outline-none focus:border-brand-red text-white cursor-pointer"
+                value={editingEmployee.branchId}
+                onChange={e => setEditingEmployee({...editingEmployee, branchId: e.target.value})}
+              >
+                {BRANCHES.map(b => (
+                  <option key={b.id} value={b.id}>SUCURSAL: {b.name.toUpperCase()}</option>
+                ))}
+                <option value="all">TODAS / CORPORATIVO (Solo Admin)</option>
+              </select>
+            </div>
+
+            {/* Buttons */}
+            <div className="pt-4 flex gap-3">
+              <button 
+                type="button" 
+                onClick={() => {
+                  setActiveSubView('list');
+                  setEditingEmployee(null);
+                }}
+                className="flex-1 py-4 bg-zinc-900 border border-white/5 rounded-2xl text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-all active:scale-[0.98]"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                className="flex-1 py-4 bg-gradient-to-r from-[#ffb700] to-orange-500 text-black rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                <Save className="w-4 h-4 text-black" />
+                Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </motion.div>
       ) : (
         /* EMPLOYEES GRID / TABLE LIST */
         <div className="space-y-6">
@@ -469,6 +701,16 @@ export default function Personal({ userRole, branchId }: PersonalProps) {
                         </td>
                         <td className="px-6 py-4.5 text-right">
                           <div className="flex justify-end gap-2">
+                            <button 
+                              onClick={() => {
+                                setEditingEmployee(emp);
+                                setActiveSubView('edit');
+                              }}
+                              className="p-2 bg-zinc-900 hover:bg-[#ffb700]/10 border border-white/5 hover:border-[#ffb700]/30 rounded-lg text-zinc-400 hover:text-[#ffb700] transition-all cursor-pointer"
+                              title="Editar Registro"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
                             <button 
                               onClick={() => handleDeleteEmployee(emp.id, emp.name)}
                               className="p-2 bg-zinc-900 hover:bg-brand-red/10 border border-white/5 hover:border-brand-red/30 rounded-lg text-zinc-400 hover:text-brand-red transition-all cursor-pointer"

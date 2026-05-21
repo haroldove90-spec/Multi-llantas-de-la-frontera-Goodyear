@@ -23,6 +23,7 @@ alter table public.user_profiles enable row level security;
 -- ELIMINAR POLÍTICAS SI EXISTEN PARA EVITAR ERRORES DE DUPLICIDAD
 drop policy if exists "Cualquier usuario autenticado puede ver perfiles" on public.user_profiles;
 drop policy if exists "Los usuarios pueden actualizar su propio perfil" on public.user_profiles;
+drop policy if exists "El Administrador puede actualizar cualquier perfil" on public.user_profiles;
 drop policy if exists "El Administrador puede insertar nuevos perfiles" on public.user_profiles;
 drop policy if exists "El Administrador puede eliminar perfiles" on public.user_profiles;
 
@@ -46,6 +47,15 @@ create policy "El Administrador puede insertar nuevos perfiles"
 
 create policy "El Administrador puede eliminar perfiles" 
   on public.user_profiles for delete 
+  using (
+    exists (
+      select 1 from public.user_profiles 
+      where id = auth.uid() and role = 'superadmin'
+    )
+  );
+
+create policy "El Administrador puede actualizar cualquier perfil" 
+  on public.user_profiles for update 
   using (
     exists (
       select 1 from public.user_profiles 
