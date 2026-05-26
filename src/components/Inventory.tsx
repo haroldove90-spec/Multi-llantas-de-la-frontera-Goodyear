@@ -51,6 +51,24 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
     invoiceId: ''
   });
 
+  // State integration for Costo Promedio Ponderado and loss audit
+  const [activeSubTab, setActiveSubTab] = useState<'catalog' | 'valuation' | 'shrinkage'>('catalog');
+  const [lastCalculationAlert, setLastCalculationAlert] = useState<{
+    brand: string;
+    model: string;
+    previousCost: number;
+    newIncomingCost: number;
+    calculatedCost: number;
+    qty: number;
+    totalStockBefore: number;
+    totalStockAfter: number;
+    branchName: string;
+  } | null>(null);
+
+  const [auditBranch, setAuditBranch] = useState<string>('matriz');
+  const [physicalCounts, setPhysicalCounts] = useState<Record<string, number>>({});
+
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -331,18 +349,44 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
       return;
     }
 
+    let formulaLogObj: any = null;
+
     const updatedTires = tiresList.map(t => {
       if (t.id === productId) {
         const nextStock = { ...t.stock };
+        const previousQty = (Object.values(t.stock) as number[]).reduce((sum: number, item: number) => sum + (item || 0), 0);
+        
         nextStock[branchId] = (nextStock[branchId] || 0) + qtyNum;
         
-        // Also update cost price if provided
-        const newCost = parseFloat(cost) || t.cost;
+        const incomingCost = parseFloat(cost) || t.cost;
+        const totalCostBefore = previousQty * t.cost;
+        const totalCostIncoming = qtyNum * incomingCost;
+        const finalQty = previousQty + qtyNum;
+        
+        let finalCost = t.cost;
+        if (finalQty > 0) {
+          // Formula: Costo Promedio Ponderado = (Stock Anterior * Costo Anterior + Qty Entrante * Costo Entrante) / Stock Total Final
+          finalCost = Number(((totalCostBefore + totalCostIncoming) / finalQty).toFixed(2));
+        } else {
+          finalCost = incomingCost;
+        }
+        
+        formulaLogObj = {
+          brand: t.brand,
+          model: t.model,
+          previousCost: t.cost,
+          newIncomingCost: incomingCost,
+          calculatedCost: finalCost,
+          qty: qtyNum,
+          totalStockBefore: previousQty,
+          totalStockAfter: finalQty,
+          branchName: BRANCHES.find(b => b.id === branchId)?.name || branchId
+        };
         
         return {
           ...t,
           stock: nextStock,
-          cost: newCost,
+          cost: finalCost,
           lastMovement: new Date().toISOString().split('T')[0]
         };
       }
@@ -351,6 +395,7 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
 
     setTiresList(updatedTires);
     updateTiresStorage(updatedTires);
+    setLastCalculationAlert(formulaLogObj);
     setPurchaseSuccess(true);
 
     setTimeout(() => {
@@ -364,7 +409,7 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
         supplier: '',
         invoiceId: ''
       });
-    }, 1500);
+    }, 6000); // 6 seconds to give the administrator plenty of time to review the calculation formula logs
   };
 
   // Filter tires logic
@@ -398,6 +443,47 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
 
     return matchesSearch && matchesBrand && matchesRim && matchesWidth && matchesProfile && matchesStock;
   });
+
+  // -------------------------------------------------------------
+  // RECALCULO DE REPORTE REGIONAL EVALUADO - COSTO PROMEDIO EN TIEMPO REAL
+  // -------------------------------------------------------------
+  const valuationByBranch = BRANCHES.map(b => {
+    const totalQty = tiresList.reduce((sum, t) => sum + (t.stock[b.id] || 0), 0);
+    const totalCostValue = tiresList.reduce((sum, t) => sum + ((t.stock[b.id] || 0) * t.cost), 0);
+    const totalSellingValue = tiresList.reduce((sum, t) => sum + ((t.stock[b.id] || 0) * t.price), 0);
+    return {
+      id: b.id,
+      name: b.name,
+      totalQty,
+      totalCostValue,
+      totalSellingValue
+    };
+  });
+
+  const totalWarehouseQty = valuationByBranch.reduce((sum, b) => sum + b.totalQty, 0);
+  const totalCostValuation = valuationByBranch.reduce((sum, b) => sum + b.totalCostValue, 0);
+  const totalSellingValuation = valuationByBranch.reduce((sum, b) => sum + b.totalSellingValue, 0);
+  const potentialProfitMargin = totalSellingValuation - totalCostValuation;
+
+  const brandsSet = Array.from(new Set(tiresList.map(t => t.brand))).filter(Boolean) as string[];
+  const valuationByBrand = brandsSet.map(brandName => {
+    const brandTires = tiresList.filter(t => t.brand.toLowerCase() === brandName.toLowerCase());
+    const totalQty = brandTires.reduce((sum, t) => sum + (Object.values(t.stock) as number[]).reduce((s, v) => s + (v || 0), 0), 0);
+    const totalCostValue = brandTires.reduce((sum, t) => {
+      const q = (Object.values(t.stock) as number[]).reduce((s, v) => s + (v || 0), 0);
+      return sum + (q * t.cost);
+    }, 0);
+    const totalSellingValue = brandTires.reduce((sum, t) => {
+      const q = (Object.values(t.stock) as number[]).reduce((s, v) => s + (v || 0), 0);
+      return sum + (q * t.price);
+    }, 0);
+    return {
+      brand: brandName,
+      qty: totalQty,
+      totalCostValue,
+      totalSellingValue
+    };
+  }).sort((a, b) => b.totalCostValue - a.totalCostValue);
 
   return (
     <div className="space-y-6 bg-interface-bg min-h-screen text-white pb-20">
@@ -455,7 +541,43 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
         </div>
       </header>
 
-      {/* Modern Compact Search & Filter Toolbar */}
+      {/* Dynamic Sub-tab navigation under "Total Black + Red & Gold" identity */}
+      <div className="flex flex-wrap bg-[#000000] border border-zinc-850 p-1.5 rounded-2xl w-full md:w-fit gap-1 select-none">
+        <button
+          onClick={() => setActiveSubTab('catalog')}
+          className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[10.5px] font-black uppercase tracking-widest transition-all cursor-pointer border ${
+            activeSubTab === 'catalog'
+              ? 'bg-zinc-950 text-[#ffb700] border-[#ffb700] shadow-[#ffb700]/10 shadow-md'
+              : 'border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900/30'
+          }`}
+        >
+          📦 EXISTENCIAS ({filteredTires.length})
+        </button>
+        <button
+          onClick={() => setActiveSubTab('valuation')}
+          className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[10.5px] font-black uppercase tracking-widest transition-all cursor-pointer border ${
+            activeSubTab === 'valuation'
+              ? 'bg-zinc-950 text-white border-[#ffb700] shadow-md'
+              : 'border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900/30'
+          }`}
+        >
+          💰 CAPITAL VALORIZADO
+        </button>
+        <button
+          onClick={() => setActiveSubTab('shrinkage')}
+          className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[10.5px] font-black uppercase tracking-widest transition-all cursor-pointer border ${
+            activeSubTab === 'shrinkage'
+              ? 'bg-zinc-950 text-brand-red border-brand-red shadow-brand-red/10 shadow-md'
+              : 'border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900/30'
+          }`}
+        >
+          🚨 AUDITORÍA Y MERMAS
+        </button>
+      </div>
+
+      {activeSubTab === 'catalog' && (
+        <>
+          {/* Modern Compact Search & Filter Toolbar */}
       <div className="bg-card-bg rounded-2xl border border-white/5 p-4 space-y-4">
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
@@ -605,6 +727,7 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
                 <th className="px-4 py-4 text-right text-amber-400 font-extrabold bg-[#ffb700]/5">Precio 2</th>
                 <th className="px-4 py-4 text-right text-[#ffb700] font-extrabold bg-[#ffb700]/5">P. Revendedor</th>
                 {hasAccessToCost && <th className="px-4 py-4 text-right text-emerald-400">Costo (Neto)</th>}
+                {hasAccessToCost && <th className="px-4 py-4 text-right text-[#ffb700] font-black bg-[#ffb700]/5">Utilidad Real</th>}
                 <th className="px-5 py-4 text-right">Existencia</th>
               </tr>
             </thead>
@@ -751,6 +874,20 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
                           <span className="bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-md font-black text-[10px] tracking-wide">
                             ${tire.cost.toLocaleString()}
                           </span>
+                        </td>
+                      )}
+
+                      {/* Utilidad Real (Margen) */}
+                      {hasAccessToCost && (
+                        <td className="px-4 py-3 text-right bg-[#ffb700]/5">
+                          <div className="flex flex-col items-end">
+                            <span className="text-emerald-400 font-extrabold text-xs">
+                              +${(tire.price - tire.cost).toLocaleString()}
+                            </span>
+                            <span className="text-[9px] text-[#ffb700] font-black">
+                              {tire.price > 0 ? (((tire.price - tire.cost) / tire.price) * 100).toFixed(0) : 0}% Margen
+                            </span>
+                          </div>
                         </td>
                       )}
 
@@ -923,6 +1060,532 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
           )}
         </div>
       </div>
+        </>
+      )}
+
+      {/* DYNAMIC TAB 2: FINANCIAL VALUATION DASHBOARD */}
+      {activeSubTab === 'valuation' && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          {/* Executive Value Card */}
+          <div className="bg-black border-2 border-[#ffb700] rounded-[2.5rem] p-8 relative overflow-hidden shadow-2xl">
+            <div className="absolute right-0 top-0 w-64 h-64 bg-[#ffb700]/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+            <div className="absolute left-10 bottom-0 w-32 h-32 bg-brand-red/5 rounded-full blur-2xl pointer-events-none" />
+            
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-3">
+                <span className="bg-brand-red/10 text-brand-red border border-brand-red/20 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
+                  CONSOLIDADO FINANCIERO ERP
+                </span>
+                <h3 className="text-sm font-black text-zinc-400 uppercase tracking-wider block">Tu almacén vale actualmente (A Costo Promedio Ponderado):</h3>
+                <div className="space-y-1">
+                  <span className="text-4xl md:text-5xl font-black text-[#ffb700] tracking-tighter block">
+                    ${totalCostValuation.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
+                  </span>
+                  <span className="text-xs text-zinc-400 uppercase font-bold block">
+                    Basado en <span className="text-white font-extrabold">{totalWarehouseQty} neumáticos</span> activos distribuidos en {BRANCHES.length} sucursales
+                  </span>
+                </div>
+              </div>
+
+              {/* Secondary Capital Metrics Block */}
+              <div className="grid grid-cols-2 gap-4 bg-zinc-950/80 border border-zinc-900 p-5 rounded-2xl min-w-[280px]">
+                <div>
+                  <span className="block text-[8px] text-zinc-500 uppercase font-black">Valor en Venta Público</span>
+                  <span className="text-sm font-black text-white">
+                    ${totalSellingValuation.toLocaleString('es-MX')}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[8px] text-emerald-500 uppercase font-black">Utilidad Bruta Latente</span>
+                  <span className="text-sm font-black text-emerald-400">
+                    +${potentialProfitMargin.toLocaleString('es-MX')}
+                  </span>
+                </div>
+                <div className="col-span-2 border-t border-zinc-900/60 pt-2 mt-2 flex justify-between text-[10px] font-bold">
+                  <span className="text-zinc-500 uppercase">Margen Retorno Global:</span>
+                  <span className="text-[#ffb700] font-black">
+                    {totalSellingValuation > 0 ? ((potentialProfitMargin / totalSellingValuation) * 100).toFixed(1) : 0}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Simulated Capital Scenario Widget */}
+            <div className="mt-8 pt-6 border-t border-zinc-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-[#ffb700] uppercase tracking-widest">Simulador de Impacto / Valor de Reposición</p>
+                <p className="text-[9px] text-zinc-500 uppercase">Ajusta el coeficiente de adquisición por inflación o aranceles de importación:</p>
+              </div>
+              
+              <div className="flex items-center gap-4 bg-zinc-950 px-4 py-2 rounded-xl border border-zinc-900 w-full sm:w-auto">
+                <span className="text-[10px] text-zinc-400 font-extrabold">Costo Promedio +5%:</span>
+                <span className="text-xs font-black text-brand-red">
+                  ${(totalCostValuation * 1.05).toLocaleString('es-MX', { maximumFractionDigits: 0 })} MXN
+                </span>
+                <span className="text-zinc-700">|</span>
+                <span className="text-[10px] text-zinc-400 font-extrabold">+10%:</span>
+                <span className="text-xs font-black text-[#ffb700]">
+                  ${(totalCostValuation * 1.10).toLocaleString('es-MX', { maximumFractionDigits: 0 })} MXN
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Detailed Breakdown Columns (By Branch / By Brand) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* COLUMN 1: SUCURSAL BREAKDOWN */}
+            <div className="bg-zinc-950 border border-zinc-900 rounded-[2rem] p-6 space-y-4">
+              <div className="border-b border-zinc-900 pb-3 flex justify-between items-center">
+                <div>
+                  <h4 className="text-xs font-black text-white uppercase tracking-widest">Capital Inmovilizado por Sucursal</h4>
+                  <p className="text-[9px] text-zinc-500 uppercase">Distribución física de fondos inventariados</p>
+                </div>
+                <span className="text-[10px] bg-brand-red/10 border border-brand-red/15 text-brand-red px-2 py-0.5 rounded font-black">
+                  {BRANCHES.length} SUCURSALES
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {valuationByBranch.map(branchData => {
+                  const percentageOfWarehouse = totalCostValuation > 0 
+                    ? (branchData.totalCostValue / totalCostValuation) * 100 
+                    : 0;
+
+                  return (
+                    <div key={branchData.id} className="bg-black/40 border border-zinc-900 p-4 rounded-xl space-y-2">
+                      <div className="flex justify-between items-start text-xs font-bold">
+                        <div>
+                          <p className="text-white uppercase font-black">{branchData.name}</p>
+                          <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Código sucursal: {branchData.id}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[#ffb700] font-black">${branchData.totalCostValue.toLocaleString()} MXN</p>
+                          <p className="text-[9px] text-zinc-400 uppercase font-black">
+                            {branchData.totalQty} piezas • {percentageOfWarehouse.toFixed(1)}% del Total
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Bar indicator matching Red and Gold theme */}
+                      <div className="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden">
+                        <div 
+                          className="bg-brand-red h-full rounded-full transition-all duration-700"
+                          style={{ width: `${percentageOfWarehouse}%` }}
+                        />
+                      </div>
+
+                      <div className="flex justify-between text-[8.5px] text-zinc-500 font-extrabold uppercase pt-1">
+                        <span>Rentabilidad Estimada:</span>
+                        <span className="text-emerald-400">
+                          Utilidad Latente: +${(branchData.totalSellingValue - branchData.totalCostValue).toLocaleString()} MXN
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* COLUMN 2: BRAND BREAKDOWN */}
+            <div className="bg-zinc-950 border border-zinc-900 rounded-[2rem] p-6 space-y-4">
+              <div className="border-b border-zinc-900 pb-3 flex justify-between items-center">
+                <div>
+                  <h4 className="text-xs font-black text-white uppercase tracking-widest">Concentración de Inventario por Marca</h4>
+                  <p className="text-[9px] text-zinc-500 uppercase">Capital agrupado por fabricante y línea comercial</p>
+                </div>
+                <span className="text-[10px] bg-[#ffb700]/10 border border-[#ffb700]/20 text-[#ffb700] px-2 py-0.5 rounded font-black">
+                  {valuationByBrand.length} MARCAS
+                </span>
+              </div>
+
+              <div className="space-y-3.5 max-h-[480px] overflow-y-auto pr-2">
+                {valuationByBrand.map(bBrand => {
+                  const percentage = totalCostValuation > 0 
+                    ? (bBrand.totalCostValue / totalCostValuation) * 100 
+                    : 0;
+
+                  return (
+                    <div key={bBrand.brand} className="bg-[#000000] p-3.5 border border-zinc-900 rounded-xl space-y-2 hover:border-[#ffb700]/45 transition-all">
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#ffb700]" />
+                          <span className="font-mono font-black text-white uppercase tracking-tight">{bBrand.brand}</span>
+                        </div>
+                        <span className="font-extrabold text-[#ffb700] font-mono">${bBrand.totalCostValue.toLocaleString()} MXN</span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-[9px] uppercase tracking-wide">
+                        <span className="text-zinc-500">Cantidad: <strong className="text-zinc-350 font-black">{bBrand.qty} pzs</strong></span>
+                        <span className="text-zinc-500">Peso en Almacén: <strong className="text-white font-black">{percentage.toFixed(1)}%</strong></span>
+                      </div>
+
+                      <div className="w-full bg-zinc-900 h-1 rounded-full overflow-hidden">
+                        <div 
+                          className="bg-[#ffb700] h-full rounded-full"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+          </div>
+        </motion.div>
+      )}
+
+      {/* DYNAMIC TAB 3: SHRINKAGE AUDIT (FILTRO DE PÉRDIDA) */}
+      {activeSubTab === 'shrinkage' && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          {/* Controls & Metrics top block */}
+          <div className="bg-zinc-950 border border-zinc-900 rounded-[2.5rem] p-6 space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-900 pb-5">
+              <div>
+                <span className="text-[10px] text-brand-red font-black uppercase tracking-widest bg-brand-red/10 border border-brand-red/15 px-3 py-1 rounded-full">
+                  FILTRO DE PÉRDIDAS CONTABLES Y SEGURIDAD
+                </span>
+                <h3 className="text-lg font-black text-white uppercase mt-2 tracking-tight">Conciliación de Inventario y Auditoría Física</h3>
+                <p className="text-[10px] text-zinc-400 uppercase tracking-tight leading-relaxed mt-1">
+                  Selecciona una sucursal para auditar. Compara la existencia grabada automáticamente en el sistema del ERP vs. el conteo físico en bodega para identificar "fugas", robos hormiga o mermas.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                <div className="space-y-1">
+                  <label className="block text-[8px] text-zinc-500 uppercase font-bold">Sucursal en Auditoría</label>
+                  <select
+                    value={auditBranch}
+                    onChange={(e) => {
+                      setAuditBranch(e.target.value);
+                      setPhysicalCounts({}); // reset
+                    }}
+                    className="p-3 text-xs font-black uppercase tracking-wider bg-black border border-zinc-850 rounded-xl text-[#ffb700] outline-none cursor-pointer"
+                  >
+                    {BRANCHES.map(b => (
+                      <option key={b.id} value={b.id}>{b.name.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Live audit metrics metrics */}
+            {(() => {
+              const auditTires = tiresList.filter(t => t.stock[auditBranch] !== undefined);
+              let totalDiscrepantQty = 0;
+              let totalLossValue = 0;
+              let itemsWithMermasCount = 0;
+
+              auditTires.forEach(t => {
+                const sysStock = t.stock[auditBranch] !== undefined ? t.stock[auditBranch] : 15;
+                const physicalCount = physicalCounts[t.id] !== undefined ? physicalCounts[t.id] : sysStock;
+                const discrepancy = physicalCount - sysStock;
+                if (discrepancy < 0) {
+                  totalDiscrepantQty += Math.abs(discrepancy);
+                  totalLossValue += Math.abs(discrepancy) * t.cost;
+                  itemsWithMermasCount++;
+                }
+              });
+
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  
+                  <div className="bg-black/60 p-4 border border-zinc-900 rounded-2xl relative">
+                    <span className="block text-[9px] text-zinc-500 font-black uppercase tracking-widest leading-none mb-1">Sucursal Auditada</span>
+                    <span className="text-sm font-black text-white block uppercase">
+                      {BRANCHES.find(b => b.id === auditBranch)?.name || auditBranch}
+                    </span>
+                    <span className="text-[9px] text-zinc-400 uppercase font-medium mt-1 block">
+                      {BRANCHES.find(b => b.id === auditBranch)?.location}
+                    </span>
+                  </div>
+
+                  <div className="bg-black/60 p-4 border border-zinc-900 rounded-2xl">
+                    <span className="block text-[9px] text-zinc-500 font-black uppercase tracking-widest leading-none mb-1">Neumáticos de Catálogo</span>
+                    <span className="text-xl font-black text-[#ffb700] block">
+                      {auditTires.length} Diseños
+                    </span>
+                    <span className="text-[9px] text-zinc-400 uppercase font-medium mt-1 block">
+                      Auditables en esta locación
+                    </span>
+                  </div>
+
+                  <div className="bg-black/60 p-4 border border-zinc-900 rounded-2xl">
+                    <span className="block text-[9px] text-zinc-500 font-black uppercase tracking-widest leading-none mb-1">Neumáticos Faltantes (Faltante)</span>
+                    <span className={`text-xl font-black block ${totalDiscrepantQty > 0 ? 'text-brand-red' : 'text-emerald-400'}`}>
+                      {totalDiscrepantQty} Piezas
+                    </span>
+                    <span className="text-[9px] text-zinc-400 uppercase font-medium mt-1 block">
+                      Repartido en {itemsWithMermasCount} medidas de neumáticos
+                    </span>
+                  </div>
+
+                  <div className="bg-zinc-950 p-4 border border-brand-red/30 bg-brand-red/5 rounded-2xl">
+                    <span className="block text-[9px] text-brand-red font-black uppercase tracking-widest leading-none mb-1">💲 Impacto Financiero por Pérdida</span>
+                    <span className={`text-xl font-black block ${totalLossValue > 0 ? 'text-brand-red' : 'text-emerald-400'}`}>
+                      -${totalLossValue.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
+                    </span>
+                    <span className="text-[9px] text-zinc-400 uppercase font-medium mt-1 block">
+                      Pérdida neta de capital a costo CPP
+                    </span>
+                  </div>
+
+                </div>
+              );
+            })()}
+
+            {/* Quick Action Simulation buttons */}
+            <div className="flex flex-wrap gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  // Simulate random shortages in the selected branch
+                  const auditTires = tiresList.filter(t => t.stock[auditBranch] !== undefined);
+                  const generated: Record<string, number> = {};
+                  
+                  // Reset all first
+                  auditTires.forEach(t => {
+                    const sys = t.stock[auditBranch] !== undefined ? t.stock[auditBranch] : 15;
+                    generated[t.id] = sys;
+                  });
+
+                  // Tweak a couple of them to introduce shortages
+                  if (auditTires.length >= 1) {
+                    const t1Spec = auditTires[0];
+                    const sys1 = t1Spec.stock[auditBranch] !== undefined ? t1Spec.stock[auditBranch] : 15;
+                    generated[t1Spec.id] = Math.max(0, sys1 - 2); // 2 units missing
+                  }
+                  if (auditTires.length >= 3) {
+                    const t3Spec = auditTires[2];
+                    const sys3 = t3Spec.stock[auditBranch] !== undefined ? t3Spec.stock[auditBranch] : 15;
+                    generated[t3Spec.id] = Math.max(0, sys3 - 1); // 1 unit missing
+                  }
+
+                  setPhysicalCounts(generated);
+                }}
+                className="px-5 py-2.5 bg-brand-red text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:opacity-95 transition-all cursor-pointer shadow-lg shadow-brand-red/10"
+              >
+                ⚠️ Simular Diferencias / Faltantes (Generar Merma Demo)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  // Load system values (reconciled / OK state)
+                  const auditTires = tiresList.filter(t => t.stock[auditBranch] !== undefined);
+                  const base_counts: Record<string, number> = {};
+                  auditTires.forEach(t => {
+                    base_counts[t.id] = t.stock[auditBranch] !== undefined ? t.stock[auditBranch] : 15;
+                  });
+                  setPhysicalCounts(base_counts);
+                }}
+                className="px-5 py-2.5 bg-zinc-900 border border-zinc-850 text-zinc-450 hover:text-white hover:border-zinc-800 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer"
+              >
+                ✓ Reestablecer Sin Discrepancias (Ok)
+              </button>
+
+              {Object.keys(physicalCounts).length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Reconcile database logic: set system stocks to equal the counted values
+                    const updatedTires = tiresList.map(t => {
+                      if (physicalCounts[t.id] !== undefined) {
+                        const newStock = { ...t.stock };
+                        newStock[auditBranch] = physicalCounts[t.id];
+                        return {
+                          ...t,
+                          stock: newStock,
+                          lastMovement: new Date().toISOString().split('T')[0]
+                        };
+                      }
+                      return t;
+                    });
+                    
+                    setTiresList(updatedTires);
+                    updateTiresStorage(updatedTires);
+                    setPhysicalCounts({}); // clear after commit
+                    
+                    // Simple beeper feedback or native confirmation
+                    alert("¡CONCILIACIÓN EXITOSA! Los registros del Inventario Maestro han sido actualizados con los conteos físicos auditados y las pérdidas fiscales quedaron debidamente registradas.");
+                  }}
+                  className="px-6 py-2.5 bg-zinc-950 text-[#ffb700] border-2 border-[#ffb700] hover:bg-[#ffb700] hover:text-black text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer"
+                >
+                  ⚡ Aplicar Ajustes de Auditoría en Sistema (Conciliar)
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* AUDIT WORKBENCH GRID ROWS */}
+          <div className="bg-card-bg border border-white/5 rounded-[2.5rem] shadow-2xl overflow-hidden">
+            <div className="p-5 border-b border-zinc-900 bg-black/60 flex justify-between items-center">
+              <div>
+                <h4 className="text-xs font-black text-white uppercase tracking-widest">Neumáticos de Auditoría Locales</h4>
+                <p className="text-[9.5px] text-zinc-500 uppercase">Valores de stock de la sucursal activa</p>
+              </div>
+              <span className="text-[9.5px] text-[#ffb700] font-black uppercase bg-[#ffb700]/5 px-2.5 py-1 rounded-lg">
+                Auditoría en Curso: {BRANCHES.find(b => b.id === auditBranch)?.name.toUpperCase()}
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-black text-[9px] uppercase font-black tracking-widest border-b border-zinc-900 text-text-muted">
+                    <th className="px-6 py-4">Medida & Diseño</th>
+                    <th className="px-5 py-4 text-center">Costo Unitario (CPP)</th>
+                    <th className="px-5 py-4 text-center text-zinc-300">Stock del Sistema</th>
+                    <th className="px-6 py-4 text-center text-[#ffb700]">Conteo Físico Real</th>
+                    <th className="px-5 py-4 text-center">Desviación (Fugas)</th>
+                    <th className="px-5 py-4 text-right">Pérdida Financiera</th>
+                    <th className="px-6 py-4 text-right">Estatus contable</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-900/60 text-xs">
+                  {(() => {
+                    const auditTires = tiresList.filter(t => t.stock[auditBranch] !== undefined);
+                    
+                    if (auditTires.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-12 text-center text-zinc-500 uppercase font-black text-xs">
+                            No hay stock registrado en esta sucursal para auditar.
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return auditTires.map((t, idx) => {
+                      const sysStock = t.stock[auditBranch] !== undefined ? t.stock[auditBranch] : 15;
+                      const physicalCount = physicalCounts[t.id] !== undefined ? physicalCounts[t.id] : sysStock;
+                      const discrepancy = physicalCount - sysStock;
+                      const costVal = t.cost || 2000;
+                      const financialValue = discrepancy < 0 ? discrepancy * costVal : 0;
+
+                      return (
+                        <tr key={t.id} className={`hover:bg-white/5 transition-all text-zinc-300 ${idx % 2 !== 0 ? 'bg-black/15' : ''}`}>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col space-y-0.5">
+                              <span className="font-extrabold text-white text-xs uppercase">{t.brand} - {t.model}</span>
+                              <span className="font-mono text-[10px] text-zinc-500 font-bold">{t.width}/{t.profile} R{t.rim} • r{t.rim}</span>
+                            </div>
+                          </td>
+
+                          {/* Unit cost */}
+                          <td className="px-5 py-4 text-center">
+                            <span className="bg-zinc-900 text-zinc-500 px-2 py-1 rounded font-mono font-bold">
+                              ${costVal.toLocaleString()}
+                            </span>
+                          </td>
+
+                          {/* System inventory record */}
+                          <td className="px-5 py-4 text-center text-[#ffb700]">
+                            <span className="text-sm font-black text-[#ffb700]">
+                              {sysStock} pzs
+                            </span>
+                          </td>
+
+                          {/* Counter Input Physical real stock */}
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex items-center justify-center gap-2 max-w-[140px] mx-auto">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const nextVal = Math.max(0, physicalCount - 1);
+                                  setPhysicalCounts(prev => ({ ...prev, [t.id]: nextVal }));
+                                }}
+                                className="w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-850 text-white font-extrabold flex items-center justify-center hover:bg-zinc-900 cursor-pointer text-sm"
+                              >
+                                -
+                              </button>
+                              
+                              <input
+                                type="number"
+                                min={0}
+                                value={physicalCount}
+                                onChange={(e) => {
+                                  const val = Math.max(0, parseInt(e.target.value) || 0);
+                                  setPhysicalCounts(prev => ({ ...prev, [t.id]: val }));
+                                }}
+                                className="w-14 text-center bg-black border border-zinc-850 rounded-lg p-1.5 font-black text-xs text-white"
+                              />
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const nextVal = physicalCount + 1;
+                                  setPhysicalCounts(prev => ({ ...prev, [t.id]: nextVal }));
+                                }}
+                                className="w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-850 text-white font-extrabold flex items-center justify-center hover:bg-zinc-900 cursor-pointer text-sm"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </td>
+
+                          {/* Divergency discrepancy value */}
+                          <td className="px-5 py-4 text-center">
+                            <span className={`text-xs font-black inline-block px-2.5 py-1 rounded-lg ${
+                              discrepancy === 0 
+                                ? 'bg-zinc-900/60 text-zinc-500' 
+                                : discrepancy < 0 
+                                  ? 'bg-brand-red/10 text-brand-red border border-brand-red/15' 
+                                  : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/15'
+                            }`}>
+                              {discrepancy === 0 ? '± 0' : discrepancy > 0 ? `+${discrepancy}` : discrepancy}
+                            </span>
+                          </td>
+
+                          {/* Loss value in local money */}
+                          <td className="px-5 py-4 text-right">
+                            <span className={`font-mono font-extrabold text-[12px] ${financialValue < 0 ? 'text-brand-red font-black' : 'text-zinc-500'}`}>
+                              {financialValue === 0 ? '$0 MXN' : `-$${Math.abs(financialValue).toLocaleString()} MXN`}
+                            </span>
+                          </td>
+
+                          {/* Status badges */}
+                          <td className="px-6 py-4 text-right">
+                            {discrepancy === 0 ? (
+                              <span className="text-[9px] bg-emerald-500/15 text-emerald-400 font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                CONCILIADO OK
+                              </span>
+                            ) : discrepancy < 0 ? (
+                              <span className="text-[9px] bg-brand-red/15 text-brand-red font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider animate-pulse">
+                                🚨 MERMA / DESVIACIÓN
+                              </span>
+                            ) : (
+                              <span className="text-[9px] bg-[#ffb700]/15 text-[#ffb700] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                ⚠️ EXCEDENTE LOCAL
+                              </span>
+                            )}
+                          </td>
+
+                        </tr>
+                      );
+                    });
+                  })()}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="p-4 bg-black/40 border-t border-zinc-900 text-[10px] text-zinc-500 font-medium leading-relaxed uppercase">
+              ⚠️ <strong className="text-zinc-400">Nota Legal de Cumplimiento:</strong> De acuerdo con la Ley del Impuesto sobre la Renta federal, las pérdidas fiscales originadas por caso fortuito, fuerza mayor o merma operativa debidamente conciliada deberán quedar documentadas debidamente en los expedientes de control interno de Multillantas de la Frontera.
+            </div>
+
+          </div>
+        </motion.div>
+      )}
 
       {/* REGISTRATION MODAL FOR NEW PRODUCTS */}
       <AnimatePresence>
@@ -1625,9 +2288,52 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
               </div>
 
               {purchaseSuccess ? (
-                <div className="py-8 text-center text-emerald-400 font-black uppercase tracking-widest flex flex-col items-center justify-center gap-2">
-                  <CheckCircle2 className="w-12 h-12 text-emerald-400 animate-bounce" />
-                  Entrada de inventario guardada y propagada con éxito
+                <div className="space-y-4 py-4">
+                  <div className="text-center text-emerald-400 font-black uppercase tracking-widest flex flex-col items-center justify-center gap-2">
+                    <CheckCircle2 className="w-12 h-12 text-emerald-400 animate-bounce" />
+                    <span>ENTRADA DE INVENTARIO CONCILIADA</span>
+                  </div>
+
+                  {lastCalculationAlert && (
+                    <div className="bg-black/55 border border-zinc-850 p-4 rounded-2xl space-y-3">
+                      <div className="border-b border-zinc-900 pb-2">
+                        <p className="text-[10px] font-black text-[#ffb700] uppercase tracking-wider">MARCO FINANCIERO: RECALCULO DE COSTO PONDERADO (CPP)</p>
+                        <h4 className="text-sm font-black text-white uppercase">{lastCalculationAlert.brand} {lastCalculationAlert.model}</h4>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-xs font-semibold">
+                        <div className="bg-zinc-950 p-2.5 rounded-lg border border-zinc-900">
+                          <span className="block text-[8px] text-zinc-500 uppercase font-black">STOCK ANTERIOR TOTAL</span>
+                          <span className="text-white font-black">{lastCalculationAlert.totalStockBefore} pzs</span>
+                        </div>
+                        <div className="bg-zinc-950 p-2.5 rounded-lg border border-zinc-900">
+                          <span className="block text-[8px] text-zinc-500 uppercase font-black">COSTO UNITARIO ANTERIOR</span>
+                          <span className="text-white font-extrabold">${lastCalculationAlert.previousCost.toLocaleString()} MXN</span>
+                        </div>
+                        <div className="bg-zinc-950 p-2.5 rounded-lg border border-zinc-900">
+                          <span className="block text-[8px] text-emerald-500 uppercase font-black">SOCIOS/ENTRADA (+ {lastCalculationAlert.qty} PZS)</span>
+                          <span className="text-emerald-400 font-extrabold">${lastCalculationAlert.newIncomingCost.toLocaleString()} MXN</span>
+                        </div>
+                        <div className="bg-zinc-950 p-2.5 rounded-lg border border-[#ffb700]/30 bg-[#ffb700]/5">
+                          <span className="block text-[8px] text-[#ffb700] uppercase font-black">NUEVO COSTO PROMEDIO RECALCULADO</span>
+                          <span className="text-[#ffb700] font-black">${lastCalculationAlert.calculatedCost.toLocaleString()} MXN</span>
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-zinc-900/50 rounded-xl space-y-1 select-none">
+                        <span className="block text-[8px] text-zinc-600 font-bold uppercase tracking-wider">FÓRMULA ESTÁNDAR APLICADA DE CONTABILIDAD EFECTIVA:</span>
+                        <p className="text-[9.5px] font-mono text-zinc-400 leading-snug">
+                          CPP = ((S.Ant × C.Ant) + (Q.Nva × C.Nvo)) / (S.Ant + Q.Nva)<br />
+                          CPP = (({lastCalculationAlert.totalStockBefore} × ${lastCalculationAlert.previousCost}) + ({lastCalculationAlert.qty} × ${lastCalculationAlert.newIncomingCost})) / {lastCalculationAlert.totalStockAfter}<br />
+                          CPP = <span className="font-extrabold text-white">${lastCalculationAlert.calculatedCost} MXN</span>
+                        </p>
+                      </div>
+
+                      <p className="text-[9px] text-emerald-400/80 uppercase font-bold text-center">
+                        ✓ Cambios propagados a sucursal {lastCalculationAlert.branchName} de forma instantánea.
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <form onSubmit={handlePurchaseSubmit} className="space-y-4">
