@@ -39,6 +39,18 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
   const [categoryError, setCategoryError] = useState('');
   const [categorySuccess, setCategorySuccess] = useState(false);
 
+  // Modal / Form state for Purchase Entrada (Compra)
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [purchaseData, setPurchaseData] = useState({
+    productId: '',
+    branchId: 'matriz',
+    quantity: '10',
+    cost: '',
+    supplier: '',
+    invoiceId: ''
+  });
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -304,6 +316,57 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
     }, 1500);
   };
 
+  // Submit Handler for Purchase/Compra Entrada
+  const handlePurchaseSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const { productId, branchId, quantity, cost, supplier, invoiceId } = purchaseData;
+    
+    if (!productId) {
+      alert('Por favor exprese un producto de inventario existente.');
+      return;
+    }
+    const qtyNum = parseInt(quantity) || 0;
+    if (qtyNum <= 0) {
+      alert('La cantidad ingresada debe ser mayor a 0 para incrementar stock.');
+      return;
+    }
+
+    const updatedTires = tiresList.map(t => {
+      if (t.id === productId) {
+        const nextStock = { ...t.stock };
+        nextStock[branchId] = (nextStock[branchId] || 0) + qtyNum;
+        
+        // Also update cost price if provided
+        const newCost = parseFloat(cost) || t.cost;
+        
+        return {
+          ...t,
+          stock: nextStock,
+          cost: newCost,
+          lastMovement: new Date().toISOString().split('T')[0]
+        };
+      }
+      return t;
+    });
+
+    setTiresList(updatedTires);
+    updateTiresStorage(updatedTires);
+    setPurchaseSuccess(true);
+
+    setTimeout(() => {
+      setPurchaseSuccess(false);
+      setShowPurchaseModal(false);
+      setPurchaseData({
+        productId: '',
+        branchId: 'matriz',
+        quantity: '10',
+        cost: '',
+        supplier: '',
+        invoiceId: ''
+      });
+    }, 1500);
+  };
+
   // Filter tires logic
   const filteredTires = tiresList.filter(tire => {
     // Search Term
@@ -367,6 +430,16 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
               className="flex items-center gap-2 px-4 py-2.5 bg-zinc-950 text-[#ffb700] hover:text-white rounded-xl hover:bg-zinc-900 transition-all text-[11px] font-black uppercase tracking-widest border border-zinc-800 cursor-pointer"
             >
               Categorías ({categoriesList.length})
+            </button>
+          )}
+
+          {canManagePrice && (
+            <button 
+              onClick={() => setShowPurchaseModal(true)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-zinc-950 text-emerald-400 hover:text-white rounded-xl hover:bg-zinc-900 transition-all text-[11px] font-black uppercase tracking-widest border border-emerald-500/10 cursor-pointer"
+            >
+              <ShoppingCart className="w-4 h-4 text-[#ffb700]" />
+              Registrar Compra (Entrada)
             </button>
           )}
 
@@ -1514,6 +1587,166 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
                   Cerrar Administrador
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Dynamic Purchase/Replenish Modal Overlay */}
+      <AnimatePresence>
+        {showPurchaseModal && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-zinc-950 border border-zinc-900 rounded-[2rem] w-full max-w-lg p-6 relative overflow-hidden shadow-2xl space-y-5 text-white animate-scaleUp"
+            >
+              {/* Close button */}
+              <div className="absolute right-4 top-4">
+                <button 
+                  onClick={() => setShowPurchaseModal(false)}
+                  className="p-1.5 text-zinc-500 hover:text-white bg-black hover:bg-zinc-900 border border-zinc-850 rounded-full cursor-pointer transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Title group */}
+              <div>
+                <div className="flex items-center gap-1.5 text-emerald-400 text-[10px] font-black uppercase tracking-widest mb-1">
+                  <ShoppingCart className="w-3.5 h-3.5 text-[#ffb700]" />
+                  Módulo de Compras ERP
+                </div>
+                <h3 className="text-lg font-black text-white uppercase tracking-tight">Registrar Compra / Entrada de Stock</h3>
+                <p className="text-[10px] text-zinc-400 uppercase tracking-wide leading-relaxed mt-1">
+                  Abastecimiento de bodega. Al confirmar esta entrada, se incrementará el inventario del neumático seleccionado en la sucursal asignada de forma inmediata.
+                </p>
+              </div>
+
+              {purchaseSuccess ? (
+                <div className="py-8 text-center text-emerald-400 font-black uppercase tracking-widest flex flex-col items-center justify-center gap-2">
+                  <CheckCircle2 className="w-12 h-12 text-emerald-400 animate-bounce" />
+                  Entrada de inventario guardada y propagada con éxito
+                </div>
+              ) : (
+                <form onSubmit={handlePurchaseSubmit} className="space-y-4">
+                  
+                  {/* Product Specification Selection */}
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-zinc-500 uppercase tracking-wider block">Buscar / Seleccionar Neumático</label>
+                    <select
+                      required
+                      value={purchaseData.productId}
+                      onChange={(e) => {
+                        const pid = e.target.value;
+                        const tire = tiresList.find(t => t.id === pid);
+                        setPurchaseData(prev => ({ 
+                          ...prev, 
+                          productId: pid,
+                          cost: tire ? tire.cost.toString() : ''
+                        }));
+                      }}
+                      className="w-full text-xs p-3 bg-black border border-zinc-900 rounded-xl font-bold text-white outline-none focus:border-[#ffb750] transition-colors"
+                    >
+                      <option value="">-- SELECCIONAR PRODUCTO --</option>
+                      {tiresList.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.brand.toUpperCase()} {t.model} ({t.width}/{t.profile} R{t.rim}) - Costo Actual: ${t.cost.toLocaleString()} MXN
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Branch Destination representing where purchase arrives */}
+                    <div>
+                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-wider block mb-1">Sucursal Destino</label>
+                      <select
+                        required
+                        value={purchaseData.branchId}
+                        onChange={(e) => setPurchaseData(v => ({ ...v, branchId: e.target.value }))}
+                        className="w-full text-xs p-2.5 bg-black border border-zinc-900 rounded-xl font-bold text-[#ffb700] outline-none focus:border-[#ffb700]"
+                      >
+                        {BRANCHES.map(b => (
+                          <option key={b.id} value={b.id}>{b.name.toUpperCase()}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Quantity added */}
+                    <div>
+                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-wider block mb-1">Cantidad comprada (PZS)</label>
+                      <input
+                        type="number"
+                        required
+                        min={1}
+                        value={purchaseData.quantity}
+                        onChange={(e) => setPurchaseData(v => ({ ...v, quantity: Math.max(1, parseInt(e.target.value) || 0).toString() }))}
+                        className="w-full text-xs p-2.5 bg-black border border-zinc-900 rounded-xl font-extrabold text-white outline-none focus:border-[#ffb750]"
+                        placeholder="Ej. 12"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Cost of purchase u. */}
+                    <div>
+                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-wider block mb-1">Costo Unitario de Compra ($ MXN)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={purchaseData.cost}
+                        onChange={(e) => setPurchaseData(v => ({ ...v, cost: Math.max(1, parseFloat(e.target.value) || 0).toString() }))}
+                        className="w-full text-xs p-2.5 bg-black border border-zinc-900 rounded-xl font-mono text-emerald-400 font-bold outline-none focus:border-[#ffb750]"
+                        placeholder="Ej. 1200"
+                      />
+                    </div>
+
+                    {/* Invoice ID / Reference description */}
+                    <div>
+                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-wider block mb-1">Factura / Referencia</label>
+                      <input
+                        type="text"
+                        value={purchaseData.invoiceId}
+                        onChange={(e) => setPurchaseData(v => ({ ...v, invoiceId: e.target.value }))}
+                        className="w-full text-xs p-2.5 bg-black border border-zinc-900 rounded-xl text-white font-bold outline-none focus:border-[#ffb750]"
+                        placeholder="Ej. F-9932"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Supplier details */}
+                  <div>
+                    <label className="text-[9px] font-black text-[#ffb700] uppercase tracking-wider block mb-1">Proveedor Autorizado</label>
+                    <input
+                      type="text"
+                      value={purchaseData.supplier}
+                      onChange={(e) => setPurchaseData(v => ({ ...v, supplier: e.target.value }))}
+                      className="w-full text-xs p-2.5 bg-black border border-zinc-900 rounded-xl text-white font-bold outline-none focus:border-[#ffb750]"
+                      placeholder="Ej. Michelin México S.A. de C.V."
+                    />
+                  </div>
+
+                  {/* Submit actions */}
+                  <div className="flex gap-2.5 justify-end pt-3 border-t border-zinc-900">
+                    <button
+                      type="button"
+                      onClick={() => setShowPurchaseModal(false)}
+                      className="px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-850 rounded-xl text-xs font-black uppercase transition-colors cursor-pointer"
+                    >
+                      Cerrar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 bg-brand-red text-white hover:opacity-90 active:scale-95 text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-xl shadow-brand-red/10 cursor-pointer"
+                    >
+                      Aplicar Entrada Stock
+                    </button>
+                  </div>
+
+                </form>
+              )}
             </motion.div>
           </div>
         )}

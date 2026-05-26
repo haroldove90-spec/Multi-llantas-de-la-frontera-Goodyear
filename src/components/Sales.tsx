@@ -31,7 +31,7 @@ import {
   PhoneCall
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { TIRES, BRANCHES, UserRole } from '../data/mockData';
+import { TIRES, BRANCHES, UserRole, updateTiresStorage } from '../data/mockData';
 
 interface SalesProps {
   userRole?: UserRole | null;
@@ -279,7 +279,80 @@ export default function Sales({ userRole, branchId }: SalesProps) {
   }, []);
 
   // 1. POINT OF SALE (POS) STATE
-  const [posCart, setPosCart] = useState<QuoteItem[]>([]);
+  const [tiresList, setTiresList] = useState<any[]>(() => [...TIRES]);
+  const [stockWarning, setStockWarning] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleStorageUpdate = (e: any) => {
+      if (e.detail) {
+        setTiresList([...e.detail]);
+      }
+    };
+    window.addEventListener('erp-tires-updated', handleStorageUpdate);
+    return () => {
+      window.removeEventListener('erp-tires-updated', handleStorageUpdate);
+    };
+  }, []);
+
+  const [posCart, setPosCart] = useState<QuoteItem[]>(() => {
+    const saved = localStorage.getItem('erp_pos_cart');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('erp_pos_cart', JSON.stringify(posCart));
+  }, [posCart]);
+
+  useEffect(() => {
+    const handleAddToCart = (e: any) => {
+      const { productId, quantity } = e.detail;
+      const parsedQty = quantity || 1;
+      const tire = TIRES.find(t => t.id === productId);
+      if (!tire) return;
+
+      const activeBranch = branchId || 'matriz';
+      const available = tire.stock?.[activeBranch] || 0;
+      
+      setPosCart(currentCart => {
+        const existingIndex = currentCart.findIndex(item => item.productId === productId);
+        const qtyInCart = existingIndex > -1 ? currentCart[existingIndex].quantity : 0;
+        
+        if (qtyInCart + parsedQty > available) {
+          alert(`Límite de stock excedido para ${tire.brand} ${tire.model}. Stock disponible: ${available}`);
+          return currentCart;
+        }
+
+        const priceToUse = tire.price;
+        if (existingIndex > -1) {
+          const updated = [...currentCart];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            quantity: updated[existingIndex].quantity + parsedQty,
+            total: (updated[existingIndex].quantity + parsedQty) * priceToUse
+          };
+          return updated;
+        } else {
+          return [
+            ...currentCart,
+            {
+              productId,
+              brand: tire.brand,
+              model: tire.model,
+              width: tire.width,
+              profile: tire.profile,
+              rim: tire.rim,
+              price: priceToUse,
+              quantity: parsedQty,
+              total: parsedQty * priceToUse
+            }
+          ];
+        }
+      });
+    };
+    window.addEventListener('erp-add-to-cart', handleAddToCart);
+    return () => window.removeEventListener('erp-add-to-cart', handleAddToCart);
+  }, [branchId]);
+
   const [posClientInfo, setPosClientInfo] = useState({
     name: '',
     phone: '',
@@ -408,7 +481,7 @@ export default function Sales({ userRole, branchId }: SalesProps) {
   const [selectedQuoteForPrint, setSelectedQuoteForPrint] = useState<Quote | null>(null);
 
   // Tire Selector catalog filters
-  const filteredTires = TIRES.filter(t => 
+  const filteredTires = tiresList.filter(t => 
     t.brand.toLowerCase().includes(posSearchTerm.toLowerCase()) || 
     t.model.toLowerCase().includes(posSearchTerm.toLowerCase()) ||
     `${t.width}/${t.profile} R${t.rim}`.toLowerCase().includes(posSearchTerm.toLowerCase())
@@ -416,10 +489,21 @@ export default function Sales({ userRole, branchId }: SalesProps) {
 
   // POS Add item
   const handleAddItemToPos = (tireId: string) => {
-    const tire = TIRES.find(t => t.id === tireId);
+    const tire = tiresList.find(t => t.id === tireId);
     if (!tire) return;
 
+    // Check available stock in current branch
+    const available = tire.stock[activeBranch] || 0;
     const existingIndex = posCart.findIndex(item => item.productId === tireId);
+    const qtyInCart = existingIndex > -1 ? posCart[existingIndex].quantity : 0;
+
+    if (qtyInCart + 1 > available) {
+      setStockWarning(`No hay suficiente inventario de ${tire.brand} ${tire.model} en esta sucursal (Disponible: ${available} pzs).`);
+      setTimeout(() => setStockWarning(null), 4000);
+      return;
+    }
+
+    setStockWarning(null);
     if (existingIndex > -1) {
       const updated = [...posCart];
       updated[existingIndex].quantity += 1;
@@ -439,6 +523,18 @@ export default function Sales({ userRole, branchId }: SalesProps) {
 
   const handleUpdatePosQuantity = (productId: string, val: number) => {
     if (val < 1) return;
+    const tire = tiresList.find(t => t.id === productId);
+    if (!tire) return;
+
+    // Check available stock in current branch
+    const available = tire.stock[activeBranch] || 0;
+    if (val > available) {
+      setStockWarning(`No puedes vender más del inventario disponible (${available} pzs).`);
+      setTimeout(() => setStockWarning(null), 4500);
+      return;
+    }
+
+    setStockWarning(null);
     setPosCart(posCart.map(item => {
       if (item.productId === productId) {
         return { ...item, quantity: val, total: val * item.price };
@@ -522,6 +618,22 @@ export default function Sales({ userRole, branchId }: SalesProps) {
       setFollowUps([newFollowItem, ...followUps]);
     }
 
+    // Real-time stock decrease on Sale
+    let stockModified = false;
+    posCart.forEach(cartItem => {
+      const tire = TIRES.find(t => t.id === cartItem.productId);
+      if (tire) {
+        if (!tire.stock) tire.stock = {};
+        const oldStock = tire.stock[activeBranch] || 0;
+        tire.stock[activeBranch] = Math.max(0, oldStock - cartItem.quantity);
+        tire.lastMovement = new Date().toISOString().split('T')[0];
+        stockModified = true;
+      }
+    });
+    if (stockModified) {
+      updateTiresStorage(TIRES);
+    }
+
     setSalesNotes([newNote, ...salesNotes]);
     setActiveNoteForDocument(newNote); // Show printable Letter PDF immediately
     
@@ -600,13 +712,13 @@ export default function Sales({ userRole, branchId }: SalesProps) {
   };
 
   // Pre-existing quote functionality
-  const filteredQuotesTires = TIRES.filter(t => 
+  const filteredQuotesTires = tiresList.filter(t => 
     t.brand.toLowerCase().includes(posSearchTerm.toLowerCase()) || 
     t.model.toLowerCase().includes(posSearchTerm.toLowerCase())
   );
 
   const handleAddItemToQuote = (tireId: string) => {
-    const tire = TIRES.find(t => t.id === tireId);
+    const tire = tiresList.find(t => t.id === tireId);
     if (!tire) return;
 
     const existingIndex = activeQuote.findIndex(item => item.productId === tireId);
@@ -833,6 +945,13 @@ export default function Sales({ userRole, branchId }: SalesProps) {
             <h3 className="text-sm font-black text-white uppercase tracking-wider border-b border-zinc-900 pb-3 flex items-center gap-2">
               <Coins className="text-[#ffb700] w-4 h-4" /> COMPRA DE MOSTRADOR / TICKET
             </h3>
+
+            {stockWarning && (
+              <div className="p-3.5 bg-brand-red/15 border border-brand-red/25 rounded-xl text-[10.5px] font-black uppercase text-brand-red flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-brand-red shrink-0 animate-bounce" />
+                <span>{stockWarning}</span>
+              </div>
+            )}
 
             {posCart.length === 0 ? (
               <div className="py-12 text-center text-zinc-500 bg-black/40 border border-dashed border-zinc-900 rounded-xl space-y-2">

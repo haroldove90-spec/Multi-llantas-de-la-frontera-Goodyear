@@ -17,7 +17,9 @@ import {
   CreditCard,
   HandCoins,
   Coins,
-  User
+  User,
+  Camera,
+  QrCode
 } from 'lucide-react';
 import { UserRole } from '../data/mockData';
 
@@ -34,23 +36,27 @@ interface SidebarProps {
 
 export const navItems = [
   { id: 'dashboard', label: 'Métricas', icon: LayoutDashboard, roles: ['superadmin'] },
-  { id: 'inventory', label: 'Inventario Maestro', icon: Package, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
+  { id: 'qr_scanner', label: 'Escáner QR / PWA', icon: Camera, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor', 'tecnico', 'cliente'] },
+  { id: 'inventory', label: 'Inventario Maestro', icon: Package, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor', 'tecnico', 'cliente'] },
   { id: 'orders_credits', label: 'Pedidos y Cortes', icon: Coins, roles: ['contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
-  { id: 'clients_notes', label: 'Clientes y Notas', icon: Users, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
-  { id: 'transfers', label: 'Traspasos', icon: Truck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
-  { id: 'warranties', label: 'Garantías', icon: ShieldCheck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
+  { id: 'clients_notes', label: 'Clientes y Notas', icon: Users, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor', 'cliente'] },
+  { id: 'transfers', label: 'Traspasos', icon: Truck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor', 'tecnico'] },
+  { id: 'warranties', label: 'Garantías', icon: ShieldCheck, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor', 'tecnico', 'cliente'] },
   { id: 'reports', label: 'Reportes', icon: FileText, roles: ['superadmin', 'contador'] },
   { id: 'fiscal', label: 'Facturación / CFDI', icon: FileText, roles: ['secretaria_facturista', 'credito_cobranza', 'contador', 'superadmin'] },
-  { id: 'credits_center', label: 'Créditos', icon: CreditCard, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
+  { id: 'credits_center', label: 'Créditos', icon: CreditCard, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor', 'cliente'] },
   { id: 'accounts_payable', label: 'Cuentas x Pagar', icon: HandCoins, roles: ['superadmin', 'contador', 'secretaria_facturista'] },
   { id: 'sales', label: 'Cotizaciones', icon: ShoppingCart, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
   { id: 'personal', label: 'Personal', icon: Users, roles: ['superadmin'] },
-  { id: 'profile', label: 'Mi Perfil', icon: User, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
-  { id: 'customization', label: 'Preferencias', icon: Settings, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
-  { id: 'help', label: 'Ayuda', icon: HelpCircle, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor'] },
+  { id: 'profile', label: 'Mi Perfil', icon: User, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor', 'tecnico', 'cliente'] },
+  { id: 'customization', label: 'Preferencias', icon: Settings, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor', 'tecnico', 'cliente'] },
+  { id: 'help', label: 'Ayuda', icon: HelpCircle, roles: ['superadmin', 'contador', 'secretaria_facturista', 'credito_cobranza', 'vendedor', 'tecnico', 'cliente'] },
 ];
 
 export const getDynamicLabel = (itemId: string, role: UserRole | null): string => {
+  if (itemId === 'qr_scanner') {
+    return 'Escáner QR / PWA';
+  }
   if (role === 'superadmin') {
     switch (itemId) {
       case 'dashboard': return 'Métricas';
@@ -153,6 +159,7 @@ export const getOrderedNavItems = (role: UserRole | null) => {
   if (role === 'superadmin') {
     idsOrder = [
       'dashboard',
+      'qr_scanner',
       'inventory',
       'clients_notes',
       'transfers',
@@ -170,6 +177,7 @@ export const getOrderedNavItems = (role: UserRole | null) => {
   } else if (role === 'contador') {
     idsOrder = [
       'orders_credits',
+      'qr_scanner',
       'inventory',
       'clients_notes',
       'transfers',
@@ -186,6 +194,7 @@ export const getOrderedNavItems = (role: UserRole | null) => {
   } else if (role === 'secretaria_facturista') {
     idsOrder = [
       'inventory',
+      'qr_scanner',
       'orders_credits',
       'clients_notes',
       'transfers',
@@ -201,6 +210,7 @@ export const getOrderedNavItems = (role: UserRole | null) => {
   } else if (role === 'vendedor') {
     idsOrder = [
       'inventory',
+      'qr_scanner',
       'clients_notes',
       'transfers',
       'warranties',
@@ -213,6 +223,7 @@ export const getOrderedNavItems = (role: UserRole | null) => {
   } else if (role === 'credito_cobranza') {
     idsOrder = [
       'inventory',
+      'qr_scanner',
       'orders_credits',
       'clients_notes',
       'transfers',
@@ -224,9 +235,31 @@ export const getOrderedNavItems = (role: UserRole | null) => {
       'customization',
       'help'
     ];
+  } else if (role === 'tecnico') {
+    idsOrder = [
+      'qr_scanner',
+      'inventory',
+      'transfers',
+      'warranties',
+      'profile',
+      'customization',
+      'help'
+    ];
+  } else if (role === 'cliente') {
+    idsOrder = [
+      'qr_scanner',
+      'inventory',
+      'clients_notes',
+      'warranties',
+      'credits_center',
+      'profile',
+      'customization',
+      'help'
+    ];
   } else {
     idsOrder = [
       'dashboard',
+      'qr_scanner',
       'orders_credits',
       'inventory',
       'clients_notes',
@@ -287,6 +320,8 @@ export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onC
     secretaria_facturista: 'border-pink-500 text-pink-500',
     credito_cobranza: 'border-cyan-500 text-cyan-500',
     vendedor: 'border-orange-500 text-orange-500',
+    tecnico: 'border-amber-500 text-amber-500',
+    cliente: 'border-yellow-400 text-yellow-400',
   };
 
   const roleLabels = {
@@ -295,6 +330,8 @@ export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onC
     secretaria_facturista: 'Secretaria Facturista',
     credito_cobranza: 'Crédito y Cobranza',
     vendedor: 'Vendedor',
+    tecnico: 'Técnico / Operador',
+    cliente: 'Cliente VIP',
   };
 
   return (
@@ -367,6 +404,8 @@ export default function Sidebar({ activeTab, setActiveTab, userRole, isOpen, onC
                     <option value="secretaria_facturista">Sec. Facturista</option>
                     <option value="credito_cobranza">Crédito y Cobro</option>
                     <option value="vendedor">Vendedor</option>
+                    <option value="tecnico">Técnico (Antes Asesor)</option>
+                    <option value="cliente">Cliente VIP</option>
                   </select>
                 </div>
               </div>

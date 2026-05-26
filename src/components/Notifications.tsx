@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { Bell, X, Info, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { TIRES, BRANCHES } from '../data/mockData';
 
 interface Notification {
   id: string;
@@ -11,10 +12,8 @@ interface Notification {
 }
 
 const MOCK_NOTIFICATIONS: Notification[] = [
-  { id: '1', title: 'Inventario Bajo', message: 'La sucursal San Andres reporta stock crítico en llantas Michelin.', type: 'alert', time: '5m ago' },
-  { id: '2', title: 'Nueva Venta', message: 'Se ha registrado una venta de $12,400 en Sucursal Helios.', type: 'success', time: '12m ago' },
-  { id: '3', title: 'Traspaso Pendiente', message: 'Industrial solicita aprobación para traslado de rines.', type: 'warning', time: '1h ago' },
-  { id: '4', title: 'Sistema Actualizado', message: 'Se han aplicado parches de seguridad al ERP.', type: 'info', time: '3h ago' },
+  { id: 'mock-1', title: 'Nueva Venta', message: 'Se ha registrado una venta de $12,400 en Sucursal Frontera.', type: 'success', time: '12m' },
+  { id: 'mock-2', title: 'Sistema Actualizado', message: 'Módulo de inventarios sincronizado con caché.', type: 'info', time: '3h' },
 ];
 
 interface NotificationsProps {
@@ -23,14 +22,89 @@ interface NotificationsProps {
 }
 
 export default function Notifications({ isOpen, onClose }: NotificationsProps) {
-  const [notifications, setNotifications] = React.useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [tiresList, setTiresList] = useState(() => [...TIRES]);
+  const [dismissedList, setDismissedList] = useState<string[]>([]);
+
+  // Listen to live inventory changes in case they buy/sell packages
+  useEffect(() => {
+    const handleUpdate = (e: any) => {
+      if (e.detail) {
+        setTiresList([...e.detail]);
+      } else {
+        setTiresList([...TIRES]);
+      }
+    };
+    window.addEventListener('erp-tires-updated', handleUpdate);
+    return () => window.removeEventListener('erp-tires-updated', handleUpdate);
+  }, []);
+
+  // Compute smart inventory alerts dynamically
+  const alertsList = useMemo(() => {
+    const activeAlerts: Notification[] = [];
+
+    tiresList.forEach(tire => {
+      // 1. Alertas de stock mínimo ("Quedan 3 llantas 205/55R16")
+      Object.entries(tire.stock || {}).forEach(([branchId, val]) => {
+        const qty = Number(val) || 0;
+        if (qty > 0 && qty <= 3) {
+          const br = BRANCHES.find(b => b.id === branchId);
+          const branchName = br ? br.name.replace('Sucursal ', '') : branchId;
+          activeAlerts.push({
+            id: `low-${tire.id}-${branchId}`,
+            title: 'Quedan pocas llantas',
+            message: `Quedan exactamente ${qty} llantas ${tire.brand} ${tire.model} (${tire.width}/${tire.profile} R${tire.rim}) en Sucursal ${branchName}. Reponer stock pronto.`,
+            type: 'alert',
+            time: 'Stock Bajo'
+          });
+        }
+      });
+
+      // 2. Alertas de productos sin rotación ("Este producto no se vende desde hace 90 días")
+      // Calculate days since lastMovement. Default to an older date if none specified.
+      const today = new Date('2026-05-26');
+      const lastMoveDate = new Date(tire.lastMovement || '2025-11-20');
+      const diffTime = Math.abs(today.getTime() - lastMoveDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays >= 90) {
+        activeAlerts.push({
+          id: `stale-${tire.id}`,
+          title: 'Sin Rotación detectado',
+          message: `El producto ${tire.brand} ${tire.model} R${tire.rim} no registra movimientos desde hace ${diffDays} días (Límite: 90 días).`,
+          type: 'warning',
+          time: `Inactivo ${diffDays}d`
+        });
+      }
+
+      // 3. Alertas de exceso de inventario (Overstock >= 35)
+      Object.entries(tire.stock || {}).forEach(([branchId, val]) => {
+        const qty = Number(val) || 0;
+        if (qty >= 35) {
+          const br = BRANCHES.find(b => b.id === branchId);
+          const branchName = br ? br.name.replace('Sucursal ', '') : branchId;
+          activeAlerts.push({
+            id: `over-${tire.id}-${branchId}`,
+            title: 'Exceso de Inventario',
+            message: `Capacidad sobrepasada: ${qty} piezas de ${tire.brand} ${tire.model} en Sucursal ${branchName}. Se sugiere programar Traspaso.`,
+            type: 'info',
+            time: 'Sobre-stock'
+          });
+        }
+      });
+    });
+
+    // Merge with static system updates and apply dismissal filter
+    return [...activeAlerts, ...MOCK_NOTIFICATIONS].filter(item => !dismissedList.includes(item.id));
+  }, [tiresList, dismissedList]);
 
   const clearAll = () => {
-    setNotifications([]);
+    // Dismiss all active ones
+    const allIds = alertsList.map(item => item.id);
+    setDismissedList(prev => [...prev, ...allIds]);
   };
 
   const removeOne = (id: string) => {
-    setNotifications(notifications.filter(n => n.id !== id));
+    setDismissedList(prev => [...prev, id]);
   };
 
   if (!isOpen) return null;
@@ -54,20 +128,20 @@ export default function Notifications({ isOpen, onClose }: NotificationsProps) {
             </div>
             <div>
               <h3 className="text-lg font-black uppercase tracking-tighter text-white">Notificaciones</h3>
-              <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Panel de alertas ERP</p>
+              <p className="text-[10px] font-bold text-[#ffb700] uppercase tracking-widest">Semaforización & Inteligencia</p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-white/5 rounded-xl transition-colors text-text-muted"
+            className="p-2 hover:bg-white/5 rounded-xl transition-colors text-text-muted cursor-pointer"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {notifications.length > 0 ? (
-            notifications.map((notif) => (
+          {alertsList.length > 0 ? (
+            alertsList.map((notif) => (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -115,7 +189,7 @@ export default function Notifications({ isOpen, onClose }: NotificationsProps) {
         <div className="p-6 border-t border-white/5 bg-interface-bg/30">
           <button 
             onClick={clearAll}
-            disabled={notifications.length === 0}
+            disabled={alertsList.length === 0}
             className="w-full bg-brand-red p-4 rounded-2xl text-white font-black uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-brand-red/20 disabled:opacity-50 disabled:grayscale"
           >
             Limpiar todas las alertas

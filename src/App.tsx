@@ -19,6 +19,7 @@ import ReportsStatistics from './components/ReportsStatistics';
 import LoginForm from './components/LoginForm';
 import Personal from './components/Personal';
 import Profile from './components/Profile';
+import Scanner from './components/Scanner';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bell, Search, User, LayoutDashboard, Package, ShoppingCart, Truck, FileText, Store, LogOut, ChevronRight, Menu, ShieldCheck, RefreshCw, DollarSign, TrendingUp } from 'lucide-react';
 import { BRANCHES, UserRole } from './data/mockData';
@@ -316,6 +317,8 @@ export default function App() {
         return <Personal userRole={userRole} branchId={selectedBranchId} />;
       case 'profile':
         return <Profile />;
+      case 'qr_scanner':
+        return <Scanner userRole={userRole} branchId={selectedBranchId} />;
       case 'customization':
         return <Customization />;
       case 'branches':

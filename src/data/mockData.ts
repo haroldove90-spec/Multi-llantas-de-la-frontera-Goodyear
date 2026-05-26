@@ -1,4 +1,4 @@
-export type UserRole = 'superadmin' | 'contador' | 'vendedor' | 'secretaria_facturista' | 'credito_cobranza';
+export type UserRole = 'superadmin' | 'contador' | 'vendedor' | 'secretaria_facturista' | 'credito_cobranza' | 'tecnico' | 'cliente';
 
 export interface User {
   id: string;
@@ -29,7 +29,9 @@ export const USERS: User[] = [
   { id: 'u5', name: 'Magdalena López', role: 'secretaria_facturista', branchId: 'matriz', email: 'magdalena_lopez@multillantas.com', password: '123_facturista', phone: '899-111-3333' },
   { id: 'u6', name: 'Cristian Esparza', role: 'vendedor', branchId: 'oriente', email: 'cristian_esparza@multillantas.com', password: '123_vendedor', phone: '899-444-5555' },
   { id: 'u7', name: 'Misael Esparza', role: 'credito_cobranza', branchId: 'poniente', email: 'misael_esparza@multillantas.com', password: '123_credito', phone: '899-666-7777' },
-  { id: 'u8', name: 'Alfredo Esparza', role: 'vendedor', branchId: 'sur', email: 'alfredo_esparza@miltillantas.com', password: '123_vendedor', phone: '899-222-8888' }
+  { id: 'u8', name: 'Alfredo Esparza', role: 'vendedor', branchId: 'sur', email: 'alfredo_esparza@miltillantas.com', password: '123_vendedor', phone: '899-222-8888' },
+  { id: 'u_tecnico', name: 'Jaime López (Técnico)', role: 'tecnico', branchId: 'matriz', email: 'jaime_tecnico@multillantas.com', password: '123_tecnico', phone: '899-777-8888' },
+  { id: 'u_cliente', name: 'Páginas y Talleres Regios (Cliente)', role: 'cliente', branchId: 'matriz', email: 'cliente_vip@gmail.com', password: '123_cliente', phone: '81-9999-0000' }
 ];
 
 export function getActiveEmployees(): User[] {
@@ -111,6 +113,7 @@ export interface Tire {
   imageUrl?: string; // Imagen del producto (simulado por el momento)
   stock: Record<string, number>; // branchId -> quantity
   lastMovement: string; // ISO Date for rotation analysis
+  barcode?: string; // Código de barras o QR EAN/UPC para el escaneo móvil PWA
 }
 
 export interface Transfer {
@@ -212,6 +215,7 @@ export const TIRES: Tire[] = [
     price1: 4600, price2: 4400, priceReseller: 4125,
     imageUrl: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 24, norte: 12, sur: 45 }, lastMovement: '2024-05-13',
+    barcode: '750100011101'
   },
   {
     id: '2', brand: 'Michelin', model: 'Defender LTX M/S', width: 265, profile: 70, rim: 17,
@@ -219,6 +223,7 @@ export const TIRES: Tire[] = [
     price1: 4940, price2: 4680, priceReseller: 4420,
     imageUrl: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 15, norte: 15, sur: 8 }, lastMovement: '2024-05-12',
+    barcode: '750100011102'
   },
   {
     id: '3', brand: 'BFGoodrich', model: 'All-Terrain KO2', width: 285, profile: 75, rim: 16,
@@ -226,6 +231,7 @@ export const TIRES: Tire[] = [
     price1: 5795, price2: 5490, priceReseller: 5185,
     imageUrl: 'https://images.unsplash.com/photo-1616422285623-13ff0162193c?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 30, norte: 25, sur: 20 }, lastMovement: '2024-05-13',
+    barcode: '750100011103'
   },
   {
     id: '4', brand: 'BFGoodrich', model: 'Mud-Terrain KM3', width: 315, profile: 70, rim: 17,
@@ -233,6 +239,7 @@ export const TIRES: Tire[] = [
     price1: 6840, price2: 6480, priceReseller: 6120,
     imageUrl: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 5, norte: 5, sur: 30 }, lastMovement: '2024-05-09',
+    barcode: '750100011104'
   },
   {
     id: '5', brand: 'Michelin', model: 'Primacy 4', width: 205, profile: 55, rim: 16,
@@ -240,6 +247,7 @@ export const TIRES: Tire[] = [
     price1: 2945, price2: 2790, priceReseller: 2635,
     imageUrl: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 5, norte: 18, sur: 12 }, lastMovement: '2024-05-13',
+    barcode: '750100011105'
   },
   {
     id: '6', brand: 'Michelin', model: 'Ltx Trail', width: 265, profile: 65, rim: 17,
@@ -247,6 +255,7 @@ export const TIRES: Tire[] = [
     price1: 4085, price2: 3870, priceReseller: 3655,
     imageUrl: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 12, norte: 12, sur: 15 }, lastMovement: '2024-04-15',
+    barcode: '750100011106'
   },
   {
     id: '7', brand: 'BFGoodrich', model: 'Advantage Control', width: 215, profile: 55, rim: 17,
@@ -254,6 +263,7 @@ export const TIRES: Tire[] = [
     price1: 3230, price2: 3060, priceReseller: 2890,
     imageUrl: 'https://images.unsplash.com/photo-1616422285623-13ff0162193c?w=400&auto=format&fit=crop&q=60',
     stock: { matriz: 20, norte: 8, sur: 10 }, lastMovement: '2024-05-10',
+    barcode: '750100011107'
   },
 ];
 
@@ -265,8 +275,8 @@ const ensureMinimumStock = (tires: Tire[]) => {
     }
     const branchKeys = ['matriz', 'norte', 'sur', 'oriente', 'poniente', 'frontera'];
     branchKeys.forEach(br => {
-      if (tire.stock[br] === undefined || tire.stock[br] <= 0) {
-        tire.stock[br] = 50; // Ofrece stock abundante de respaldo para pruebas fluidas
+      if (tire.stock[br] === undefined) {
+        tire.stock[br] = 15; // Ofrece un stock razonable inicial si no está definido
       }
     });
   });
@@ -340,6 +350,33 @@ export const TRANSFERS: Transfer[] = [
     date: '2024-05-12',
   },
 ];
+
+const loadPersistedTransfers = () => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('erp_transfers');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          TRANSFERS.length = 0;
+          TRANSFERS.push(...parsed);
+        }
+      } catch (e) {
+        console.error('Failed to load persisted transfers:', e);
+      }
+    }
+  }
+};
+loadPersistedTransfers();
+
+export const updateTransfersStorage = (newTransfers: Transfer[]) => {
+  TRANSFERS.length = 0;
+  TRANSFERS.push(...newTransfers);
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('erp_transfers', JSON.stringify(TRANSFERS));
+    window.dispatchEvent(new CustomEvent('erp-transfers-updated', { detail: TRANSFERS }));
+  }
+};
 
 export const SALES: Sale[] = [
   {

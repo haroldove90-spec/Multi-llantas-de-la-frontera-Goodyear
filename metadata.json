@@ -1,6 +1,8 @@
 {
   "name": "Multillantas de la Frontera Goodyear",
   "description": "Portal multi-sucursal para Multillantas de la Frontera. Gestión de 3 sedes (Helios, San Andres, Industrial) con dashboard dinámico por roles.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": [
+    "camera"
+  ],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
