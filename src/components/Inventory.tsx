@@ -2,10 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { 
   Package, Search, Filter, Plus, ArrowRightLeft, 
   ShoppingCart, X, Upload, CheckCircle2, Image as ImageIcon, 
-  Loader2, DollarSign, Sparkles, FilterX, HelpCircle
+  Loader2, DollarSign, Sparkles, FilterX, HelpCircle, RefreshCw
 } from 'lucide-react';
-import { TIRES, BRANCHES, UserRole, Tire, updateTiresStorage, CATEGORIES, Category, updateCategoriesStorage } from '../data/mockData';
+import { TIRES, BRANCHES, UserRole, Tire, updateTiresStorage, CATEGORIES, Category, updateCategoriesStorage, logTireMovement, getMovementLogs, MovementLog, saveMovementLogs } from '../data/mockData';
 import { motion, AnimatePresence } from 'motion/react';
+
+function playConteoBeep() {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1400, ctx.currentTime);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+  } catch (e) {
+    console.warn(e);
+  }
+}
 
 interface InventoryProps {
   userRole?: UserRole | null;
@@ -52,7 +74,14 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
   });
 
   // State integration for Costo Promedio Ponderado and loss audit
-  const [activeSubTab, setActiveSubTab] = useState<'catalog' | 'valuation' | 'shrinkage'>('catalog');
+  const [activeSubTab, setActiveSubTab] = useState<'catalog' | 'valuation' | 'shrinkage' | 'conteo' | 'audit'>('catalog');
+  
+  // Real-time Conteo Físico rack scanners
+  const [conteoBranch, setConteoBranch] = useState<string>('matriz');
+  const [conteoScans, setConteoScans] = useState<Record<string, number>>({});
+  const [isConteoActive, setIsConteoActive] = useState<boolean>(false);
+  const [showConteoResults, setShowConteoResults] = useState<boolean>(false);
+
   const [lastCalculationAlert, setLastCalculationAlert] = useState<{
     brand: string;
     model: string;
@@ -117,6 +146,71 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
       window.removeEventListener('erp-tires-updated', handleStorageUpdate);
       window.removeEventListener('erp-categories-updated', handleCategoriesUpdate);
     };
+  }, []);
+
+  // Seeding/Syncing Movement Logs inside Inventory PWA terminal
+  const [movementLogs, setMovementLogs] = useState<MovementLog[]>([]);
+
+  useEffect(() => {
+    const handleLogsUpdate = () => {
+      const logs = getMovementLogs();
+      if (logs.length === 0) {
+        const seedLogs: MovementLog[] = [
+          {
+            id: 'M-523192',
+            userName: 'Manuel Villaseñor',
+            userRole: 'vendedor',
+            productId: '1',
+            productDetails: 'Michelin Pilot Sport 4 (225/45 R17)',
+            type: 'venta',
+            sourceBranchId: 'matriz',
+            sourceBranchName: 'Helios (Matriz)',
+            destBranchId: 'cliente',
+            destBranchName: 'Cliente: Páginas y Talleres Regios',
+            qty: 4,
+            date: '2026-05-26T18:30:00.000Z',
+            reason: 'Venta de neumáticos con Nota de Venta NV-2026-081.'
+          },
+          {
+            id: 'M-224195',
+            userName: 'Harold Anguiano',
+            userRole: 'superadmin',
+            productId: '3',
+            productDetails: 'BFGoodrich All-Terrain KO2 (285/75 R16)',
+            type: 'traspaso',
+            sourceBranchId: 'matriz',
+            sourceBranchName: 'Helios (Matriz)',
+            destBranchId: 'norte',
+            destBranchName: 'San Andres (Norte)',
+            qty: 8,
+            date: '2026-05-26T14:15:30.000Z',
+            reason: 'Traspaso urgente solicitado por sucursal Norte por desabasto.'
+          },
+          {
+            id: 'M-198274',
+            userName: 'Jaime López',
+            userRole: 'tecnico',
+            productId: '4',
+            productDetails: 'BFGoodrich Mud-Terrain KM3 (315/70 R17)',
+            type: 'ajuste',
+            sourceBranchId: 'sur',
+            sourceBranchName: 'Industrial (Sur)',
+            destBranchId: 'sur',
+            destBranchName: 'Industrial (Sur)',
+            qty: 1,
+            date: '2026-05-25T11:45:00.000Z',
+            reason: 'Ajuste por recuento físico regular realizado en el rack off-road.'
+          }
+        ];
+        saveMovementLogs(seedLogs);
+        setMovementLogs(seedLogs);
+      } else {
+        setMovementLogs(logs);
+      }
+    };
+    handleLogsUpdate();
+    window.addEventListener('erp-movements-updated', handleLogsUpdate);
+    return () => window.removeEventListener('erp-movements-updated', handleLogsUpdate);
   }, []);
 
   // Compute unique filter values dynamically from current list
@@ -396,6 +490,23 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
     setTiresList(updatedTires);
     updateTiresStorage(updatedTires);
     setLastCalculationAlert(formulaLogObj);
+    
+    if (formulaLogObj) {
+      logTireMovement({
+        userName: localStorage.getItem('erp_user_name') || 'Administrador Financiero',
+        userRole: localStorage.getItem('erp_user_role') || 'superadmin',
+        productId: productId,
+        productDetails: `${formulaLogObj.brand} ${formulaLogObj.model}`,
+        type: 'entrada',
+        sourceBranchId: 'proveedor',
+        sourceBranchName: `PROVEEDOR: ${supplier || 'S/N'}`,
+        destBranchId: branchId,
+        destBranchName: formulaLogObj.branchName,
+        qty: qtyNum,
+        reason: `Entrada y Recálculo de Costo Promedio (CPP). Factura: ${invoiceId || 'S/F'}`
+      });
+    }
+
     setPurchaseSuccess(true);
 
     setTimeout(() => {
@@ -571,7 +682,27 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
               : 'border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900/30'
           }`}
         >
-          🚨 AUDITORÍA Y MERMAS
+          🚨 MERMAS DE AUDITORÍA
+        </button>
+        <button
+          onClick={() => setActiveSubTab('conteo')}
+          className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[10.5px] font-black uppercase tracking-widest transition-all cursor-pointer border ${
+            activeSubTab === 'conteo'
+              ? 'bg-zinc-950 text-[#ffb700] border-amber-600 shadow-[#ffb700]/5 shadow'
+              : 'border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900/30'
+          }`}
+        >
+          📷 CONTEO FÍSICO RACK
+        </button>
+        <button
+          onClick={() => setActiveSubTab('audit')}
+          className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[10.5px] font-black uppercase tracking-widest transition-all cursor-pointer border ${
+            activeSubTab === 'audit'
+              ? 'bg-zinc-950 text-emerald-400 border-emerald-500 shadow-emerald-500/5 shadow'
+              : 'border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900/30'
+          }`}
+        >
+          🛡️ BITÁCORA OPERATIVA
         </button>
       </div>
 
@@ -893,11 +1024,41 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
 
                       {/* Consolidated Stock Total */}
                       <td className="px-5 py-3 text-right">
-                        <span className={`w-8 h-8 rounded-full ${
-                          totalStock === 0 ? 'bg-zinc-900/60 text-zinc-650' : 'bg-zinc-900 text-[#ffb700]'
-                        } flex items-center justify-center ml-auto font-black text-[10px] border border-zinc-850`}>
-                          {totalStock}
-                        </span>
+                        <div className="flex items-center justify-end gap-2.5">
+                          {totalStock > 10 ? (
+                            <span 
+                              title="Stock Seguro (🟢 > 10)" 
+                              className="text-xs font-black bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-1 rounded flex items-center gap-1.5"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
+                              {totalStock} pzs
+                            </span>
+                          ) : totalStock === 0 ? (
+                            <span 
+                              title="Agotado (🔴)" 
+                              className="text-xs font-black bg-red-500/10 border border-red-500/20 text-[#ef4444] px-2 py-1 rounded flex items-center gap-1.5 animate-pulse"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]" />
+                              0 pzs
+                            </span>
+                          ) : totalStock < 5 ? (
+                            <span 
+                              title="Bajo Stock Crítico (🟡 < 5)" 
+                              className="text-xs font-black bg-amber-500/10 border border-amber-500/30 text-amber-500 px-2 py-1 rounded flex items-center gap-1.5"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_#f59e0b]" />
+                              {totalStock} pzs
+                            </span>
+                          ) : (
+                            <span 
+                              title="Stock Regular (🟡)" 
+                              className="text-xs font-black bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 px-2 py-1 rounded flex items-center gap-1.5"
+                            >
+                              <span className="w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_8px_#facc15]" />
+                              {totalStock} pzs
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </motion.tr>
                   );
@@ -1583,6 +1744,393 @@ export default function Inventory({ userRole, branchId }: InventoryProps) {
               ⚠️ <strong className="text-zinc-400">Nota Legal de Cumplimiento:</strong> De acuerdo con la Ley del Impuesto sobre la Renta federal, las pérdidas fiscales originadas por caso fortuito, fuerza mayor o merma operativa debidamente conciliada deberán quedar documentadas debidamente en los expedientes de control interno de Multillantas de la Frontera.
             </div>
 
+          </div>
+        </motion.div>
+      )}
+
+      {/* ----------- SUB-TAB: CONTEO FÍSICO RACK (MODO CONTEO FÍSICO) ----------- */}
+      {activeSubTab === 'conteo' && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6 animate-fade-in"
+        >
+          {/* Header Panel */}
+          <div className="bg-zinc-950 border border-zinc-900 rounded-[2.5rem] p-6 relative overflow-hidden">
+            <div className="absolute right-0 top-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[120px] pointer-events-none" />
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-1">
+                <span className="text-[10px] text-[#ffb700] bg-[#ffb700]/10 border border-[#ffb700]/15 px-3 py-1 rounded-full font-black uppercase tracking-widest">
+                  Control Operativo • Conteo Físico Escaneado
+                </span>
+                <h3 className="text-xl font-black text-white uppercase tracking-tight mt-1">Simulador de Auditoría de Rack</h3>
+                <p className="text-xs text-zinc-400 max-w-2xl leading-relaxed uppercase font-bold">
+                  Activa el modo conteo físico, selecciona una sucursal, y simula el disparo láser del lector de código de barras para registrar lo que realmente hay en los racks de bodega contra lo teórico del ERP.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3 shrink-0">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[8px] text-zinc-500 uppercase font-black tracking-widest leading-none">Sucursal a Auditar</label>
+                  <select 
+                    value={conteoBranch}
+                    disabled={isConteoActive}
+                    onChange={(e) => {
+                      setConteoBranch(e.target.value);
+                      setConteoScans({});
+                      setShowConteoResults(false);
+                    }}
+                    className="bg-black border border-zinc-900 rounded-xl px-4 py-2 text-xs font-black text-white uppercase outline-none focus:border-[#ffb700] disabled:opacity-50"
+                  >
+                    {BRANCHES.map(b => (
+                      <option key={b.id} value={b.id}>{b.name.toUpperCase()} ({b.id.toUpperCase()})</option>
+                    ))}
+                  </select>
+                </div>
+
+                {!isConteoActive ? (
+                  <button
+                    onClick={() => {
+                      setIsConteoActive(true);
+                      setConteoScans({});
+                      setShowConteoResults(false);
+                      playConteoBeep();
+                    }}
+                    className="px-6 py-2 bg-brand-red text-white hover:opacity-90 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer self-end"
+                  >
+                    🚀 Iniciar Conteo Físico
+                  </button>
+                ) : (
+                  <div className="flex gap-2 self-end">
+                    <button
+                      onClick={() => {
+                        setIsConteoActive(false);
+                        setConteoScans({});
+                        setShowConteoResults(false);
+                      }}
+                      className="px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsConteoActive(false);
+                        setShowConteoResults(true);
+                        playConteoBeep();
+                      }}
+                      className="px-6 py-2 bg-[#ffb700] text-black hover:opacity-95 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer"
+                    >
+                      🛑 Finalizar y Comparar
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Neon Count Mode Indicator Bar */}
+            {isConteoActive && (
+              <motion.div 
+                animate={{ opacity: [1, 0.6, 1] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+                className="mt-6 p-4 bg-brand-red/10 border-2 border-brand-red rounded-2xl flex items-center justify-between text-xs"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-2.5 h-2.5 bg-brand-red rounded-full animate-ping" />
+                  <span className="font-extrabold text-brand-red uppercase tracking-widest">
+                    Modo Conteo Físico Activo — Posicionado en Sucursal {BRANCHES.find(b => b.id === conteoBranch)?.name.toUpperCase()}
+                  </span>
+                </div>
+                <div className="font-mono text-[10px] bg-brand-red/20 text-white font-bold px-3 py-1 rounded-md uppercase border border-brand-red/30">
+                  Rack Escaneado: {Object.values(conteoScans).reduce((sum, v) => sum + v, 0)} Neumáticos Totales
+                </div>
+              </motion.div>
+            )}
+          </div>
+
+          {/* If count is active, show the interactive scanning bench. Else if finished, show the results. */}
+          {isConteoActive ? (
+            <div className="bg-card-bg border border-zinc-900 p-6 rounded-[2.5rem] space-y-6">
+              <div>
+                <h4 className="text-sm font-black text-[#ffb700] uppercase tracking-widest">Escaneo Rápido de Racks en Bodega</h4>
+                <p className="text-[10px] text-zinc-500 uppercase">Haz clic en la pestaña "Simular Escaneo (+1)" de cada llanta para imitar el láser inalámbrico acoplado.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {tiresList.map(t => {
+                  const theoretical = t.stock[conteoBranch] || 0;
+                  const counted = conteoScans[t.id] || 0;
+
+                  return (
+                    <div 
+                      key={t.id} 
+                      className={`p-4 rounded-3xl border transition-all flex flex-col justify-between gap-3 ${
+                        counted > 0 
+                          ? 'bg-[#ffb700]/5 border-[#ffb700]/30 shadow-md shadow-[#ffb700]/5' 
+                          : 'bg-black border-zinc-900 hover:border-zinc-850'
+                      }`}
+                    >
+                      <div className="flex gap-3">
+                        <div className="w-12 h-12 bg-zinc-950 border border-zinc-900 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+                          {t.imageUrl ? <img src={t.imageUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : <Package className="w-5 h-5 text-zinc-650" />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-extrabold text-[#ffb700] uppercase text-xs truncate leading-tight">{t.brand} {t.model}</p>
+                          <p className="font-mono text-[9px] text-zinc-500 mt-0.5">{t.width}/{t.profile} R{t.rim}</p>
+                          <p className="font-mono text-[8px] text-zinc-650 mt-1 uppercase">Código EAN: <span className="text-zinc-500">{t.barcode || `75010001110${t.id}`}</span></p>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center bg-zinc-950 p-2.5 rounded-xl border border-zinc-900">
+                        <div className="text-center">
+                          <span className="block text-[8px] text-zinc-500 uppercase font-black tracking-wider leading-none">Teórico ERP</span>
+                          <span className="text-xs font-black text-white">{theoretical} pzs</span>
+                        </div>
+                        <div className="text-center border-l border-zinc-900 pl-3">
+                          <span className="block text-[8px] text-zinc-500 uppercase font-black tracking-wider leading-none">Físico Escaneado</span>
+                          <span className="text-xs font-black text-[#ffb700]">{counted} pzs</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setConteoScans(prev => ({
+                            ...prev,
+                            [t.id]: (prev[t.id] || 0) + 1
+                          }));
+                          playConteoBeep();
+                        }}
+                        className="w-full py-2.5 bg-zinc-900 hover:bg-[#ffb700] hover:text-black text-white transition-all text-[9.5px] font-black uppercase tracking-widest rounded-xl cursor-pointer flex items-center justify-center gap-2 border border-zinc-850"
+                      >
+                        ⚡ Simular Disparo Láser (+1)
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : showConteoResults ? (
+            <div className="bg-card-bg border border-zinc-900 rounded-[2.5rem] shadow-2xl overflow-hidden animate-fade-in">
+              <div className="p-6 border-b border-zinc-900 bg-black/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-xs font-black text-white uppercase tracking-widest">Resultado de Auditoría Teórica vs Física</h4>
+                  <p className="text-[10px] text-zinc-500 uppercase">Evaluación física del Rack consolidado en: <strong className="text-white">{BRANCHES.find(b => b.id === conteoBranch)?.name}</strong></p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Apply Count adjustments to Master Inventory!
+                    const updatedTires = tiresList.map(t => {
+                      if (conteoScans[t.id] !== undefined) {
+                        const newStock = { ...t.stock };
+                        newStock[conteoBranch] = conteoScans[t.id];
+                        return { ...t, stock: newStock, lastMovement: new Date().toISOString().split('T')[0] };
+                      }
+                      return t;
+                    });
+
+                    // Log the movement
+                    tiresList.forEach(t => {
+                      const theoretical = t.stock[conteoBranch] || 0;
+                      const physical = conteoScans[t.id] !== undefined ? conteoScans[t.id] : theoretical;
+                      const discrepancy = physical - theoretical;
+
+                      if (discrepancy !== 0) {
+                        logTireMovement({
+                          userName: localStorage.getItem('erp_user_name') || 'Auditor de Procesos',
+                          userRole: localStorage.getItem('erp_user_role') || 'superadmin',
+                          productId: t.id,
+                          productDetails: `${t.brand} ${t.model}`,
+                          type: 'ajuste',
+                          sourceBranchId: conteoBranch,
+                          sourceBranchName: BRANCHES.find(b => b.id === conteoBranch)?.name || conteoBranch,
+                          destBranchId: conteoBranch,
+                          destBranchName: BRANCHES.find(b => b.id === conteoBranch)?.name || conteoBranch,
+                          qty: Math.abs(discrepancy),
+                          reason: `Auditoría física de rack. Ajuste reconciliado de ${discrepancy >= 0 ? '+' : ''}${discrepancy} piezas.`
+                        });
+                      }
+                    });
+
+                    setTiresList(updatedTires);
+                    updateTiresStorage(updatedTires);
+                    setConteoScans({});
+                    setShowConteoResults(false);
+                    alert("¡CONCILIACIÓN DE CONTEO CARGADA AL ERP CON ÉXITO! El inventario de rack físico ahora coincide idénticamente con el maestro, y las discrepancias operativas quedaron registradas en la bitácora de auditoría.");
+                  }}
+                  className="px-6 py-2.5 bg-[#ffb700] hover:bg-amber-600 text-black text-xs font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer border border-[#ffb700]/30"
+                >
+                  ⚡ Guardar y Aplicar Ajuste en Sucursal
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-black text-[9px] uppercase font-black tracking-widest border-b border-zinc-900 text-text-muted">
+                      <th className="px-6 py-4">Medida & Marca</th>
+                      <th className="px-5 py-4 text-center">Teórico (ERP)</th>
+                      <th className="px-5 py-4 text-center">Contado Físicamente</th>
+                      <th className="px-5 py-4 text-center">Desviación / Diferencia</th>
+                      <th className="px-6 py-4 text-right">Efecto / Alerta</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-900 text-xs text-zinc-300">
+                    {tiresList.map(t => {
+                      const theoretical = t.stock[conteoBranch] || 0;
+                      const counted = conteoScans[t.id] !== undefined ? conteoScans[t.id] : theoretical;
+                      const diff = counted - theoretical;
+
+                      return (
+                        <tr key={t.id} className="hover:bg-zinc-900/40 transition-all">
+                          <td className="px-6 py-4">
+                            <span className="font-extrabold text-white uppercase text-xs">{t.brand} {t.model}</span>
+                            <span className="block font-mono text-[9px] text-zinc-500">{t.width}/{t.profile} R{t.rim}</span>
+                          </td>
+                          <td className="px-5 py-4 text-center font-black">{theoretical} pzs</td>
+                          <td className="px-5 py-4 text-center font-black text-[#ffb700] bg-[#ffb700]/5">{counted} pzs</td>
+                          <td className="px-5 py-4 text-center font-black">
+                            <span className={`px-2 py-0.5 rounded font-black text-[10px] ${
+                              diff === 0 
+                                ? 'bg-zinc-900 text-zinc-500' 
+                                : diff < 0 
+                                  ? 'bg-red-500/10 text-red-500 border border-red-900/15' 
+                                  : 'bg-emerald-500/10 text-emerald-400 border border-emerald-900/15'
+                            }`}>
+                              {diff === 0 ? '± 0' : diff > 0 ? `+${diff}` : diff}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            {diff === 0 ? (
+                              <span className="text-[9px] bg-zinc-900 text-zinc-500 font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                ✅ Sin Diferencias
+                              </span>
+                            ) : diff < 0 ? (
+                              <span className="text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider bg-red-950/40 text-red-500 border border-red-900/30 font-black animate-pulse" style={{ color: '#ef4444' }}>
+                                🔴 FALTANTE: {Math.abs(diff)} pzs
+                              </span>
+                            ) : (
+                              <span className="text-[9px] bg-emerald-950/40 text-emerald-400 font-bold px-2 py-1 rounded-lg uppercase tracking-wider border border-emerald-800/30">
+                                🟢 EXCEDENTE: +{diff} pzs
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-black/60 border border-zinc-900 rounded-[2rem] p-8 text-center space-y-3">
+              <p className="text-zinc-500 font-mono text-xs uppercase font-black">Ningún Conteo Físico Iniciado</p>
+              <h4 className="text-sm font-black text-white uppercase tracking-wider">Alinea los racks de la sucursal activa</h4>
+              <p className="text-xs text-zinc-400 max-w-sm mx-auto uppercase">Presiona el botón "Iniciar Conteo Físico" de la esquina superior derecha para encender la terminal lectora de códigos.</p>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* ----------- SUB-TAB: BITÁCORA OPERATIVA (AUDIT TRAIL / MOVEMENT LOG) ----------- */}
+      {activeSubTab === 'audit' && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          {/* Header Panel */}
+          <div className="bg-zinc-950 border border-zinc-900 rounded-[2.5rem] p-6 flex flex-col md:flex-row justify-between md:items-center gap-4 relative overflow-hidden">
+            <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
+            <div className="relative z-10 space-y-1">
+              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/15 px-3 py-1 rounded-full font-black uppercase tracking-widest">
+                Bitácora de Control y Traspasos • Audit Trail
+              </span>
+              <h3 className="text-xl font-black text-white uppercase tracking-tight mt-1.5">Registro Histórico de Auditoría</h3>
+              <p className="text-xs text-zinc-400 mt-1 uppercase max-w-2xl font-bold leading-relaxed">
+                Cada entrada de almacén, venta, traspaso rápido de sucursal o ajuste físico de inventario se graba irrevocablemente en el libro de transacciones operativas.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                if (confirm('¿Seguro que deseas purgar los registros de la bitácora local?')) {
+                  saveMovementLogs([]);
+                }
+              }}
+              className="px-4 py-2 hover:bg-brand-red hover:text-white border border-zinc-900 text-zinc-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer self-start md:self-center z-10"
+            >
+              Purgar Bitácora
+            </button>
+          </div>
+
+          {/* Audit trail list view */}
+          <div className="bg-card-bg border border-white/5 rounded-[2.5rem] p-6 space-y-4 shadow-xl">
+            <h4 className="text-xs font-black text-white uppercase tracking-widest border-b border-zinc-900 pb-3">Libro Diario de Control</h4>
+            
+            <div className="space-y-3.5 max-h-[600px] overflow-y-auto pr-1">
+              {movementLogs.length === 0 ? (
+                <div className="text-center py-12 text-zinc-650 font-mono text-xs uppercase font-black">
+                  No se han registrado movimientos de inventario en este período de trabajo.
+                </div>
+              ) : (
+                movementLogs.map(log => {
+                  return (
+                    <div 
+                      key={log.id} 
+                      className="bg-black/45 border border-zinc-900 hover:border-zinc-850 p-4 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all"
+                    >
+                      <div className="flex gap-3.5 items-start">
+                        <div className={`p-2.5 rounded-xl shrink-0 ${
+                          log.type === 'entrada' 
+                            ? 'bg-emerald-500/10 text-emerald-400' 
+                            : log.type === 'venta' 
+                              ? 'bg-brand-red/10 text-brand-red' 
+                              : log.type === 'traspaso' 
+                                ? 'bg-amber-500/10 text-[#ffb700]' 
+                                : 'bg-zinc-800 text-zinc-300'
+                        }`}>
+                          <RefreshCw className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-extrabold text-[#ffb700] text-xs font-mono uppercase tracking-tight">{log.id}</span>
+                            <span className={`text-[8.5px] px-2 py-0.5 rounded uppercase font-black tracking-widest ${
+                              log.type === 'entrada' 
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/15'
+                                : log.type === 'venta'
+                                  ? 'bg-red-500/10 text-red-500 border border-red-500/15'
+                                  : log.type === 'traspaso'
+                                    ? 'bg-amber-500/10 text-[#ffb700] border border-amber-500/15'
+                                    : 'bg-zinc-800 text-zinc-300 border border-zinc-700'
+                            }`}>
+                              {log.type.toUpperCase()}
+                            </span>
+                            <span className="text-[9px] text-zinc-500 font-bold uppercase">{new Date(log.date).toLocaleString()}</span>
+                          </div>
+                          
+                          <p className="text-xs font-extrabold text-white mt-1 uppercase leading-snug">{log.productDetails}</p>
+                          <p className="text-[10px] text-zinc-400 mt-1 font-semibold leading-relaxed uppercase">{log.reason}</p>
+                          
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[9px] font-black uppercase text-zinc-500">
+                            <span>Origen: <strong className="text-zinc-350">{log.sourceBranchName}</strong></span>
+                            <span className="text-zinc-700 font-normal">•</span>
+                            <span>Destino: <strong className="text-zinc-350">{log.destBranchName}</strong></span>
+                            <span className="text-zinc-700 font-normal">•</span>
+                            <span>Cantidad: <strong className="text-white bg-zinc-900 px-1.5 py-0.5 rounded">{log.qty} piezas</strong></span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-end shrink-0 border-t border-zinc-900 md:border-t-0 pt-2.5 md:pt-0 w-full md:w-auto text-right">
+                        <span className="text-[10.5px] text-white font-black leading-none">{log.userName.toUpperCase()}</span>
+                        <span className="text-[8.5px] text-zinc-500 font-black tracking-widest uppercase mt-1 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-900">{log.userRole?.toUpperCase() || 'SISTEMA'}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
         </motion.div>
       )}

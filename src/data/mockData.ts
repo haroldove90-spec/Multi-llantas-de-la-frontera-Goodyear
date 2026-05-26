@@ -116,6 +116,45 @@ export interface Tire {
   barcode?: string; // Código de barras o QR EAN/UPC para el escaneo móvil PWA
 }
 
+export interface MovementLog {
+  id: string;
+  userName: string;
+  userRole: string;
+  productId: string;
+  productDetails: string;
+  type: 'entrada' | 'salida' | 'traspaso' | 'ajuste' | 'venta';
+  sourceBranchId: string;
+  sourceBranchName: string;
+  destBranchId: string;
+  destBranchName: string;
+  qty: number;
+  date: string; // Exact ISO or readable timestamp
+  reason: string;
+}
+
+export function getMovementLogs(): MovementLog[] {
+  if (typeof window === 'undefined') return [];
+  const saved = localStorage.getItem('erp_movement_logs');
+  return saved ? JSON.parse(saved) : [];
+}
+
+export function saveMovementLogs(logs: MovementLog[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('erp_movement_logs', JSON.stringify(logs));
+  window.dispatchEvent(new CustomEvent('erp-movements-updated', { detail: logs }));
+}
+
+export function logTireMovement(log: Omit<MovementLog, 'id' | 'date'>) {
+  const currentLogs = getMovementLogs();
+  const newLog: MovementLog = {
+    ...log,
+    id: 'M-' + Date.now().toString().slice(-6) + Math.floor(Math.random() * 10),
+    date: new Date().toISOString()
+  };
+  const updated = [newLog, ...currentLogs];
+  saveMovementLogs(updated);
+}
+
 export interface Transfer {
   id: string;
   originBranchId: string;

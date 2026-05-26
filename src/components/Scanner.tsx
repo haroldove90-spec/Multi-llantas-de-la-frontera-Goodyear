@@ -26,7 +26,7 @@ import {
   Sliders,
   Play
 } from 'lucide-react';
-import { TIRES, BRANCHES, updateTiresStorage, Tire, UserRole } from '../data/mockData';
+import { TIRES, BRANCHES, updateTiresStorage, Tire, UserRole, logTireMovement } from '../data/mockData';
 
 // Generate simulated scan beep on PWA clients
 function playBeepSound() {
@@ -262,6 +262,21 @@ export default function Scanner({ userRole, branchId }: { userRole: UserRole | n
 
     localStorage.setItem('erp_sales_notes', JSON.stringify([newSaleRecord, ...salesLog]));
 
+    // Log the movement in our operational audit trail
+    logTireMovement({
+      userName: localStorage.getItem('erp_user_name') || 'Vendedor Móvil QR',
+      userRole: localStorage.getItem('erp_user_role') || 'vendedor',
+      productId: scannedTire.id,
+      productDetails: `${scannedTire.brand} ${scannedTire.model}`,
+      type: 'venta',
+      sourceBranchId: activeBranch,
+      sourceBranchName: currentBranchName,
+      destBranchId: 'cliente',
+      destBranchName: 'Cliente Final',
+      qty: saleQty,
+      reason: `Venta QR rápida desde escáner móvil`
+    });
+
     // Log feedback and close
     alert(`Nota ${nextInvoiceId} expedida con éxito. Stock de ${scannedTire.brand} en ${currentBranchName} actualizado.`);
     setShowActionModal(false);
@@ -296,6 +311,21 @@ export default function Scanner({ userRole, branchId }: { userRole: UserRole | n
 
     updateTiresStorage(updatedTires);
 
+    // Log the transfer inside our operational audit trail
+    logTireMovement({
+      userName: localStorage.getItem('erp_user_name') || 'Vendedor Móvil QR',
+      userRole: localStorage.getItem('erp_user_role') || 'vendedor',
+      productId: scannedTire.id,
+      productDetails: `${scannedTire.brand} ${scannedTire.model}`,
+      type: 'traspaso',
+      sourceBranchId: activeBranch,
+      sourceBranchName: currentBranchName,
+      destBranchId: moveDestBranchId,
+      destBranchName: destName,
+      qty: moveQty,
+      reason: `Traspaso rápido de sucursal vía scanner`
+    });
+
     // Register simple transfer order log
     alert(`Traspaso completado: ${moveQty} llantas ${scannedTire.brand} enviadas de ${currentBranchName} a ${destName}.`);
     setShowActionModal(false);
@@ -315,7 +345,25 @@ export default function Scanner({ userRole, branchId }: { userRole: UserRole | n
       return t;
     });
 
+    const oldStock = scannedTire.stock?.[activeBranch] || 0;
+    const diff = adjustQty - oldStock;
+
     updateTiresStorage(updatedTires);
+
+    // Log adjustment in operational audit trail
+    logTireMovement({
+      userName: localStorage.getItem('erp_user_name') || 'Vendedor Móvil QR',
+      userRole: localStorage.getItem('erp_user_role') || 'vendedor',
+      productId: scannedTire.id,
+      productDetails: `${scannedTire.brand} ${scannedTire.model}`,
+      type: 'ajuste',
+      sourceBranchId: activeBranch,
+      sourceBranchName: currentBranchName,
+      destBranchId: activeBranch,
+      destBranchName: currentBranchName,
+      qty: Math.abs(diff),
+      reason: `Ajuste rápido de inventario desde scanner móvil (Medida de desviación: ${diff >= 0 ? '+' : ''}${diff} piezas)`
+    });
 
     alert(`Inventario auditado correctamente. Modelo ${scannedTire.brand} ahora refleja ${adjustQty} piezas en ${currentBranchName}.`);
     setShowActionModal(false);

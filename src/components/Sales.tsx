@@ -31,7 +31,7 @@ import {
   PhoneCall
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { TIRES, BRANCHES, UserRole, updateTiresStorage } from '../data/mockData';
+import { TIRES, BRANCHES, UserRole, updateTiresStorage, logTireMovement } from '../data/mockData';
 
 interface SalesProps {
   userRole?: UserRole | null;
@@ -628,6 +628,21 @@ export default function Sales({ userRole, branchId }: SalesProps) {
         tire.stock[activeBranch] = Math.max(0, oldStock - cartItem.quantity);
         tire.lastMovement = new Date().toISOString().split('T')[0];
         stockModified = true;
+
+        // Log movement in operational ledger
+        logTireMovement({
+          userName: localStorage.getItem('erp_user_name') || 'Vendedor POS',
+          userRole: localStorage.getItem('erp_user_role') || 'vendedor',
+          productId: cartItem.productId,
+          productDetails: `${cartItem.brand} ${cartItem.model}`,
+          type: 'venta',
+          sourceBranchId: activeBranch,
+          sourceBranchName: BRANCHES.find(b => b.id === activeBranch)?.name || activeBranch,
+          destBranchId: 'cliente',
+          destBranchName: `Cliente: ${newNote.clientName}`,
+          qty: cartItem.quantity,
+          reason: `Nota de Venta ${newNote.id} (${paymentType})`
+        });
       }
     });
     if (stockModified) {

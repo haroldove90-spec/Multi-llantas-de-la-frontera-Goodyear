@@ -99,6 +99,32 @@ export default function Dashboard({ userRole, branchId, userName }: DashboardPro
 
   const COLORS = ['#f97316', '#3b82f6', '#10b981'];
 
+  // Semáforo counting logic
+  const targetBranch = branchId || 'all';
+  let greenCount = 0;
+  let yellowCount = 0;
+  let redCount = 0;
+  let regularCount = 0;
+
+  TIRES.forEach(tire => {
+    let qty = 0;
+    if (targetBranch === 'all') {
+      qty = Object.values(tire.stock).reduce((s, v) => s + (v || 0), 0);
+    } else {
+      qty = tire.stock[targetBranch] || 0;
+    }
+
+    if (qty > 10) {
+      greenCount++;
+    } else if (qty === 0) {
+      redCount++;
+    } else if (qty < 5) {
+      yellowCount++;
+    } else {
+      regularCount++;
+    }
+  });
+
   return (
     <div className="space-y-8 bg-interface-bg min-h-screen text-white pb-20">
       {/* Dynamic Welcome Banner */}
@@ -320,6 +346,72 @@ export default function Dashboard({ userRole, branchId, userName }: DashboardPro
             <button className="w-full mt-8 py-4 bg-interface-bg hover:opacity-80 rounded-2xl text-[10px] font-black text-white uppercase tracking-[0.2em] transition-all border border-card-bg">
               Bitácora Auditoría
             </button>
+          </div>
+
+          {/* SEMÁFORO DE STOCK CARD */}
+          <div className="bg-card-bg p-8 rounded-[2.5rem] border border-interface-bg shadow-xl space-y-6">
+            <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#ffb700] animate-pulse" />
+              Semáforo de Rack Físico
+            </h3>
+            
+            <div className="space-y-4">
+              {/* Verde indicator card */}
+              <div className="bg-black/40 border border-zinc-900 rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]" />
+                  <div>
+                    <span className="block text-xs font-black text-white uppercase">Stock Seguro</span>
+                    <span className="text-[9px] text-zinc-500 font-extrabold uppercase">Mayor a 10 pzs</span>
+                  </div>
+                </div>
+                <span className="text-sm font-black font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-xl">
+                  {greenCount} mod
+                </span>
+              </div>
+
+              {/* Amarillo Regular (5-10) indicator card */}
+              <div className="bg-black/40 border border-zinc-900 rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="w-3.5 h-3.5 rounded-full bg-yellow-400 shadow-[0_0_10px_#facc15]" />
+                  <div>
+                    <span className="block text-xs font-black text-white uppercase">Stock Regular</span>
+                    <span className="text-[9px] text-zinc-500 font-extrabold uppercase font-bold text-xs">Entre 5 y 10 pzs</span>
+                  </div>
+                </div>
+                <span className="text-sm font-black font-mono text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 px-2.5 py-1 rounded-xl">
+                  {regularCount} mod
+                </span>
+              </div>
+
+              {/* Amarillo Crítico (<5) indicator card */}
+              <div className="bg-black/40 border border-zinc-900 rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="w-3.5 h-3.5 rounded-full bg-amber-500 shadow-[0_0_10px_#f59e0b]" />
+                  <div>
+                    <span className="block text-xs font-black text-white uppercase">Bajo Stock Crítico</span>
+                    <span className="text-[9px] text-zinc-500 font-extrabold uppercase">Menor a 5 pzs</span>
+                  </div>
+                </div>
+                <span className="text-sm font-black font-mono text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl">
+                  {yellowCount} mod
+                </span>
+              </div>
+
+              {/* Rojo Agotado (0) indicator card */}
+              <div className="bg-black/40 border border-zinc-900 rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="w-3.5 h-3.5 rounded-full bg-red-500 shadow-[0_0_10px_#ef4444] animate-pulse" />
+                  <div>
+                    <span className="block text-xs font-black text-white uppercase">Sin Existencia (Agotado)</span>
+                    <span className="text-[9px] text-zinc-500 font-extrabold uppercase">0 pzs en sucursal</span>
+                  </div>
+                </div>
+                <span className="text-sm font-black font-mono text-[#ef4444] bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-xl">
+                  {redCount} mod
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="bg-brand-red p-8 rounded-[2.5rem] text-white shadow-xl shadow-brand-red/20 border border-brand-red/10">
